@@ -15,20 +15,7 @@ public enum WeatherMetric: String, Codable, CaseIterable, Sendable {
     case precipitationProbability
 
     public var displayName: String {
-        switch self {
-        case .temperature: return "温度"
-        case .humidity: return "湿度"
-        case .condition: return "天气"
-        case .solarIrradiance: return "太阳光照"
-        case .daylightDuration: return "日照时长"
-        case .windSpeed: return "风速"
-        case .windDirection: return "风向"
-        case .feelsLike: return "体感温度"
-        case .pressure: return "气压"
-        case .visibility: return "能见度"
-        case .uvIndex: return "UV 指数"
-        case .precipitationProbability: return "降水概率"
-        }
+        WeatherFormatter.localizedMetricName(self)
     }
 }
 

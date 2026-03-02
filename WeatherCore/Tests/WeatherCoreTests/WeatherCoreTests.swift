@@ -73,6 +73,35 @@ struct WeatherCoreTests {
         #expect(result.values[.temperature] == 25)
         #expect(result.values[.solarIrradiance] == 600)
     }
+
+    @Test
+    func formatterSupportsUnitAndLanguageLocalization() {
+        let us = Locale(identifier: "en_US")
+        let zh = Locale(identifier: "zh_Hans_CN")
+
+        let imperialTemp = WeatherFormatter.formattedValue(
+            metric: .temperature,
+            value: 22,
+            unitSystem: .imperial,
+            locale: us
+        )
+
+        #expect(imperialTemp.contains("°F"))
+        #expect(WeatherFormatter.localizedMetricName(.humidity, locale: us) == "Humidity")
+        #expect(WeatherFormatter.localizedMetricName(.humidity, locale: zh) == "湿度")
+        #expect(WeatherFormatter.localizedUnitSystemName(.metric, locale: us).contains("Metric"))
+    }
+
+    @Test
+    func formatterMapsConditionToLocalizedDescriptionAndSymbols() {
+        let en = Locale(identifier: "en_US")
+        let zh = Locale(identifier: "zh_Hans_CN")
+
+        #expect(WeatherFormatter.conditionDescription(for: "95", locale: en) == "Thunderstorm")
+        #expect(WeatherFormatter.conditionDescription(for: "302", locale: zh) == "雷暴")
+        #expect(WeatherFormatter.weatherSymbol(for: "0", isNight: false) == "sun.max.fill")
+        #expect(WeatherFormatter.weatherSymbol(for: "0", isNight: true) == "moon.stars.fill")
+    }
 }
 
 private struct MockWeatherProvider: WeatherProvider {

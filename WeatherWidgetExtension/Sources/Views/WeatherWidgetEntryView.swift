@@ -4,6 +4,7 @@ import WidgetKit
 
 struct WeatherWidgetEntryView: View {
     @Environment(\.widgetFamily) private var family
+    @Environment(\.locale) private var locale
 
     let entry: WeatherWidgetEntry
 
@@ -13,13 +14,13 @@ struct WeatherWidgetEntryView: View {
             metricGrid
 
             if entry.freshness == .stale {
-                Text("数据可能过期")
+                Text(localized("数据可能过期", "Data may be stale"))
                     .font(.caption2)
                     .foregroundStyle(.orange)
             }
 
             if entry.showsSource {
-                Text("来源：\(entry.snapshot.source)")
+                Text("\(localized("来源", "Source")): \(entry.snapshot.source)")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -37,15 +38,27 @@ struct WeatherWidgetEntryView: View {
                 Text(entry.snapshot.timestamp.formatted(date: .omitted, time: .shortened))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+                Text(WeatherFormatter.conditionDescription(for: entry.snapshot.conditionCode, locale: locale))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                Image(systemName: WeatherFormatter.weatherSymbol(for: entry.snapshot.conditionCode))
-                    .symbolRenderingMode(.multicolor)
+                Image(systemName: WeatherFormatter.weatherSymbol(for: entry.snapshot.conditionCode, isNight: isNight))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(conditionTint)
                     .font(.title3)
+                    .symbolEffect(.pulse.byLayer, value: entry.snapshot.conditionCode)
                 if let temperature = entry.snapshot.values[.temperature] {
-                    Text(WeatherFormatter.formattedValue(metric: .temperature, value: temperature, unitSystem: entry.profile.unitSystem))
+                    Text(WeatherFormatter.formattedValue(
+                        metric: .temperature,
+                        value: temperature,
+                        unitSystem: entry.profile.unitSystem,
+                        locale: locale
+                    ))
                         .font(.headline)
+                        .contentTransition(.numericText())
                 }
             }
         }
@@ -58,7 +71,12 @@ struct WeatherWidgetEntryView: View {
 
         LazyVGrid(columns: columns, alignment: .leading, spacing: 6) {
             ForEach(Array(metrics), id: \.self) { metric in
-                MetricCell(metric: metric, value: entry.snapshot.values[metric], unitSystem: entry.profile.unitSystem)
+                MetricCell(
+                    metric: metric,
+                    value: entry.snapshot.values[metric],
+                    unitSystem: entry.profile.unitSystem,
+                    locale: locale
+                )
             }
         }
     }
@@ -90,25 +108,68 @@ struct WeatherWidgetEntryView: View {
         ]
         return components.url
     }
+
+    private var isNight: Bool {
+        guard let sunrise = entry.snapshot.sunrise, let sunset = entry.snapshot.sunset else {
+            return false
+        }
+        return entry.snapshot.timestamp < sunrise || entry.snapshot.timestamp >= sunset
+    }
+
+    private var conditionTint: Color {
+        switch WeatherFormatter.weatherCategory(for: entry.snapshot.conditionCode) {
+        case .clear:
+            return .yellow
+        case .partlyCloudy:
+            return .orange
+        case .cloudy:
+            return .gray
+        case .fog:
+            return .gray.opacity(0.9)
+        case .haze:
+            return .brown
+        case .rain:
+            return .blue
+        case .snow:
+            return .cyan
+        case .thunderstorm:
+            return .indigo
+        case .windy:
+            return .mint
+        case .unknown:
+            return .secondary
+        }
+    }
+
+    private func localized(_ zh: String, _ en: String) -> String {
+        locale.language.languageCode?.identifier.hasPrefix("zh") == true ? zh : en
+    }
 }
 
 private struct MetricCell: View {
     let metric: WeatherMetric
     let value: Double?
     let unitSystem: UnitSystem
+    let locale: Locale
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(metric.displayName)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+            HStack(spacing: 4) {
+                Image(systemName: WeatherFormatter.metricSymbol(for: metric))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text(WeatherFormatter.localizedMetricName(metric, locale: locale))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
 
             Text(displayText)
                 .font(.caption)
                 .bold()
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
+                .contentTransition(.numericText())
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 2)
@@ -116,6 +177,11 @@ private struct MetricCell: View {
 
     private var displayText: String {
         guard let value else { return "--" }
-        return WeatherFormatter.formattedValue(metric: metric, value: value, unitSystem: unitSystem)
+        return WeatherFormatter.formattedValue(
+            metric: metric,
+            value: value,
+            unitSystem: unitSystem,
+            locale: locale
+        )
     }
 }

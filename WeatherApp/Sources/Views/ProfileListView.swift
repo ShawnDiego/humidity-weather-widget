@@ -19,10 +19,13 @@ struct ProfileListView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(profile.name)
                                     .font(.headline)
-                                Text(profile.metrics.map(\.displayName).joined(separator: " · "))
+                                Text(profile.metrics.map { WeatherFormatter.localizedMetricName($0) }.joined(separator: " · "))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                     .lineLimit(2)
+                                Text(WeatherFormatter.localizedUnitSystemName(profile.unitSystem))
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
                             }
                             Spacer()
                             Image(systemName: "chevron.right")
@@ -116,9 +119,9 @@ private struct ProfileEditorView: View {
             Section("基本设置") {
                 TextField("方案名称", text: $name)
                 Picker("单位", selection: $unitSystem) {
-                    Text("自动").tag(UnitSystem.auto)
-                    Text("公制").tag(UnitSystem.metric)
-                    Text("英制").tag(UnitSystem.imperial)
+                    Text(WeatherFormatter.localizedUnitSystemName(.auto)).tag(UnitSystem.auto)
+                    Text(WeatherFormatter.localizedUnitSystemName(.metric)).tag(UnitSystem.metric)
+                    Text(WeatherFormatter.localizedUnitSystemName(.imperial)).tag(UnitSystem.imperial)
                 }
             }
 
@@ -127,7 +130,7 @@ private struct ProfileEditorView: View {
                     HStack {
                         Image(systemName: selectedMetrics.contains(metric) ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(selectedMetrics.contains(metric) ? .blue : .secondary)
-                        Text(metric.displayName)
+                        Text(WeatherFormatter.localizedMetricName(metric))
                         Spacer()
                     }
                     .contentShape(Rectangle())
@@ -180,11 +183,15 @@ private struct ProfileEditorView: View {
 
         let profile = DisplayProfile(
             id: profile?.id ?? UUID(),
-            name: name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "未命名方案" : name,
+            name: name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? defaultProfileName : name,
             metrics: finalMetrics,
             unitSystem: unitSystem
         )
         onSave(profile)
         dismiss()
+    }
+
+    private var defaultProfileName: String {
+        Locale.current.language.languageCode?.identifier.hasPrefix("zh") == true ? "未命名方案" : "Untitled Profile"
     }
 }
