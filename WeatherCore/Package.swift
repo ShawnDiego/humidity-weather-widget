@@ -8,11 +8,17 @@ let package = Package(
         .macOS("14.0")
     ],
     products: [
-        .library(name: "WeatherCore", targets: ["WeatherCore"])
+        .library(name: "WeatherCore", targets: ["WeatherCore"]),
+        .executable(name: "WeatherMonitor", targets: ["WeatherMonitor"])
     ],
     targets: [
         .target(
             name: "WeatherCore"
+        ),
+        .executableTarget(
+            name: "WeatherMonitor",
+            dependencies: ["WeatherCore"],
+            path: "Sources/WeatherMonitor"
         ),
         .testTarget(
             name: "WeatherCoreTests",

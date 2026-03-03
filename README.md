@@ -253,3 +253,106 @@ xcodebuild -project HumidityWeather.xcodeproj \
 3. 在 App「设置」中填写和风天气 API Key（可留空，自动回退到 Open-Meteo）
 4. 在 App「定位」中授予定位权限或手动刷新位置
 5. 添加 Widget，长按进入编辑，选择显示方案与位置模式
+
+---
+
+## 云端实时监控
+
+`WeatherCore` 包含一个独立可执行目标 `WeatherMonitor`，可在 Linux 服务器或 Docker 容器中持续抓取天气数据，适合用于数据采集、告警触发或与监控系统集成。
+
+### 运行原理
+
+- 不依赖 iOS/macOS 运行时（无 WidgetKit、无 CoreLocation、无 App Group）
+- 直接使用 `WeatherRepository` + `CompositeWeatherProvider`（QWeather 主源 + Open-Meteo 备源）
+- 每个采集周期向 **stdout** 输出一条 JSON 对象，错误信息写入 **stderr**
+- 兼容 Docker、cron、systemd 等各类调度方式
+
+### 环境变量
+
+| 变量 | 必填 | 说明 |
+|------|------|------|
+| `MONITOR_LOCATIONS` | 否 | 监控位置列表（JSON 数组），缺省时监控北京 |
+| `QWEATHER_KEY` | 否 | 和风天气 API Key；留空则仅使用 Open-Meteo |
+| `UNIT_SYSTEM` | 否 | `metric`（默认）\| `imperial` \| `auto` |
+
+`MONITOR_LOCATIONS` 格式：
+
+```json
+[
+  {"name": "Beijing",  "lat": 39.9042, "lon": 116.4074, "tz": "Asia/Shanghai"},
+  {"name": "Tokyo",    "lat": 35.6762, "lon": 139.6503, "tz": "Asia/Tokyo"}
+]
+```
+
+### 命令行参数
+
+| 参数 | 说明 |
+|------|------|
+| （无参数）| 采集一次后退出（适合 cron） |
+| `--watch <秒>` | 每隔指定秒数采集，最小 60 s，持续运行 |
+
+### Docker 快速启动
+
+```bash
+# 构建镜像
+docker build -t weather-monitor .
+
+# 单次采集
+docker run --rm \
+  -e MONITOR_LOCATIONS='[{"name":"Beijing","lat":39.9042,"lon":116.4074,"tz":"Asia/Shanghai"}]' \
+  weather-monitor
+
+# 持续监控（每 30 分钟）
+docker run -d --name weather-monitor --restart unless-stopped \
+  -e MONITOR_LOCATIONS='[{"name":"Beijing","lat":39.9042,"lon":116.4074,"tz":"Asia/Shanghai"},{"name":"Shanghai","lat":31.2304,"lon":121.4737,"tz":"Asia/Shanghai"}]' \
+  -e QWEATHER_KEY="your_key_here" \
+  weather-monitor --watch 1800
+```
+
+使用 Docker Compose（已预配置两座城市）：
+
+```bash
+docker compose up --build
+```
+
+### 输出格式示例
+
+```json
+{
+  "reportedAt": "2026-03-03T10:00:00Z",
+  "locations": [
+    {
+      "condition": "Clear",
+      "fetchedAt": "2026-03-03T09:58:00Z",
+      "freshness": "live",
+      "location": "Beijing",
+      "metrics": [
+        { "label": "Temperature", "metric": "temperature", "rawValue": 8.0,  "value": "8.0°C" },
+        { "label": "Humidity",    "metric": "humidity",    "rawValue": 42.0, "value": "42%" },
+        { "label": "Wind Speed",  "metric": "windSpeed",   "rawValue": 12.0, "value": "12.0 km/h" }
+      ],
+      "source": "QWeather+OpenMeteo",
+      "timezone": "Asia/Shanghai"
+    }
+  ]
+}
+```
+
+### 与 cron 集成
+
+```cron
+# /etc/cron.d/weather-monitor — 每 30 分钟采集一次，追加到日志文件
+*/30 * * * * root QWEATHER_KEY=your_key docker run --rm \
+  -e MONITOR_LOCATIONS='[{"name":"Beijing","lat":39.9042,"lon":116.4074,"tz":"Asia/Shanghai"}]' \
+  -e QWEATHER_KEY="$QWEATHER_KEY" \
+  weather-monitor >> /var/log/weather.jsonl 2>&1
+```
+
+### 本地直接构建（无 Docker）
+
+```bash
+cd WeatherCore
+swift build -c release --product WeatherMonitor
+MONITOR_LOCATIONS='[{"name":"Tokyo","lat":35.6762,"lon":139.6503,"tz":"Asia/Tokyo"}]' \
+  .build/release/WeatherMonitor
+```

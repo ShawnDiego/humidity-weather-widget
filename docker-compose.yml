@@ -1,0 +1,33 @@
+# docker-compose.yml — Cloud real-time weather monitoring
+#
+# Quick start:
+#   docker compose up --build
+#
+# Environment variables:
+#   MONITOR_LOCATIONS  JSON array: '[{"name":"City","lat":0.0,"lon":0.0,"tz":"UTC"}]'
+#   QWEATHER_KEY       和风天气 API key (leave empty to use Open-Meteo only)
+#   UNIT_SYSTEM        metric | imperial | auto  (default: metric)
+#
+# The service fetches weather every WATCH_INTERVAL seconds (default 1800).
+
+services:
+  weather-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      # Add more cities by extending the JSON array below.
+      MONITOR_LOCATIONS: >-
+        [
+          {"name":"Beijing",  "lat":39.9042, "lon":116.4074, "tz":"Asia/Shanghai"},
+          {"name":"Shanghai", "lat":31.2304, "lon":121.4737, "tz":"Asia/Shanghai"}
+        ]
+      QWEATHER_KEY: ""
+      UNIT_SYSTEM: "metric"
+    command: ["--watch", "1800"]
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
