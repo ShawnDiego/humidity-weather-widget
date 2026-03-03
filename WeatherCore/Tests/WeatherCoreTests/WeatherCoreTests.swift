@@ -104,6 +104,33 @@ struct WeatherCoreTests {
     }
 
     @Test
+    func dateParserHandlesOpenMeteoLocalTimeFormat() {
+        // Open-Meteo returns "yyyy-MM-dd'T'HH:mm" (local time, no timezone designator)
+        // when a timezone is specified in the request.  Both ISO-8601 formatters
+        // used to return nil for this format, causing timestamp/sunrise/sunset to
+        // be lost and isNight to always evaluate to false.
+        let shanghai = TimeZone(identifier: "Asia/Shanghai")!
+        let parsed = DateParser.parseOpenMeteo("2024-07-01T14:00", timeZone: shanghai)
+        #expect(parsed != nil, "Local-time format must be parsed successfully")
+
+        // Verify the hour component is preserved in the target timezone
+        if let date = parsed {
+            var cal = Calendar(identifier: .gregorian)
+            cal.timeZone = shanghai
+            #expect(cal.component(.hour, from: date) == 14)
+            #expect(cal.component(.month, from: date) == 7)
+            #expect(cal.component(.day, from: date) == 1)
+        }
+
+        // ISO8601 with Z should still work (backward-compat)
+        let utcParsed = DateParser.parseOpenMeteo("2024-07-01T14:00:00Z")
+        #expect(utcParsed != nil, "ISO-8601 UTC format must still be parsed")
+
+        // Completely invalid strings must return nil
+        #expect(DateParser.parseOpenMeteo("not-a-date") == nil)
+    }
+
+    @Test
     func formatterWindDirectionHandlesEdgeCasesAndNormalization() {
         let en = Locale(identifier: "en_US")
         let zh = Locale(identifier: "zh_Hans_CN")
