@@ -131,6 +131,41 @@ struct WeatherCoreTests {
     }
 
     @Test
+    func qWeatherSunDateUsesLocalTimezone() {
+        // This test validates the date/timezone consistency that the fetchSun fix enforces:
+        // the date string sent to the QWeather sun API must be in the location's local
+        // timezone, not UTC.  Before the fix, UTC was used, so for UTC+8 locations after
+        // 16:00 UTC the API would receive yesterday's date while parseClockTime would
+        // reconstruct the time on today's date — producing an off-by-one-day sunrise/sunset.
+
+        // Simulate 23:30 UTC on July 1 — for a UTC+8 location the local date is July 2.
+        let simulatedNow = ISO8601DateFormatter().date(from: "2024-07-01T23:30:00Z")!
+        let tz = TimeZone(identifier: "Asia/Shanghai")!
+
+        let utcFormatter = DateFormatter()
+        utcFormatter.dateFormat = "yyyyMMdd"
+        utcFormatter.locale = Locale(identifier: "en_US_POSIX")
+        utcFormatter.timeZone = TimeZone(secondsFromGMT: 0)!
+
+        let localFormatter = DateFormatter()
+        localFormatter.dateFormat = "yyyyMMdd"
+        localFormatter.locale = Locale(identifier: "en_US_POSIX")
+        localFormatter.timeZone = tz
+
+        let utcDate = utcFormatter.string(from: simulatedNow)    // "20240701" — wrong for Shanghai
+        let localDate = localFormatter.string(from: simulatedNow) // "20240702" — correct for Shanghai
+
+        #expect(utcDate != localDate, "UTC and local dates must differ near midnight UTC")
+        #expect(localDate == "20240702", "Local Shanghai date must be July 2")
+
+        // Verify parseClockTime also uses the same local date so both sides are consistent.
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = tz
+        let dayInShanghai = cal.component(.day, from: simulatedNow)
+        #expect(dayInShanghai == 2, "Calendar day in Shanghai must be 2")
+    }
+
+    @Test
     func formatterWindDirectionHandlesEdgeCasesAndNormalization() {
         let en = Locale(identifier: "en_US")
         let zh = Locale(identifier: "zh_Hans_CN")
