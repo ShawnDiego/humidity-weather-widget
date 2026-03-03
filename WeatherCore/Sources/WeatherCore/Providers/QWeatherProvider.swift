@@ -142,5 +142,5 @@ private struct QWeatherSunResponse: Decodable {
 private typealias QWeatherSun = QWeatherSunResponse
 
 private extension ISO8601DateFormatter {
-    static let shared: ISO8601DateFormatter = ISO8601DateFormatter()
+    nonisolated(unsafe) static let shared: ISO8601DateFormatter = ISO8601DateFormatter()
 }

@@ -269,7 +269,7 @@ public enum WeatherFormatter {
         locale.language.languageCode?.identifier.hasPrefix("zh") == true
     }
 
-    private static let numberFormatterCache: NSCache<NSString, NumberFormatter> = {
+    private nonisolated(unsafe) static let numberFormatterCache: NSCache<NSString, NumberFormatter> = {
         let cache = NSCache<NSString, NumberFormatter>()
         cache.countLimit = 20
         return cache

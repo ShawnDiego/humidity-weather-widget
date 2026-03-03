@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(CryptoKit)
 import CryptoKit
+#endif
 
 public struct CachedSnapshotEnvelope: Codable, Sendable {
     public var fetchedAt: Date
@@ -69,7 +71,19 @@ public actor SnapshotCacheStore {
     }
 
     private func fileURL(for key: String) -> URL {
+        #if canImport(CryptoKit)
         let digest = SHA256.hash(data: Data(key.utf8)).compactMap { String(format: "%02x", $0) }.joined()
+        #else
+        // FNV-1a 64-bit — deterministic, collision-resistant enough for cache filenames.
+        let fnvOffsetBasis: UInt64 = 14_695_981_039_346_656_037
+        let fnvPrime: UInt64 = 1_099_511_628_211
+        var hash: UInt64 = fnvOffsetBasis
+        for byte in key.utf8 {
+            hash ^= UInt64(byte)
+            hash = hash &* fnvPrime
+        }
+        let digest = String(format: "%016x", hash)
+        #endif
         return cacheDirectory.appendingPathComponent("\(digest).json")
     }
 }

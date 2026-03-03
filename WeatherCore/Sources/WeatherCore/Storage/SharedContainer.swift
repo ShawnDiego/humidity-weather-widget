@@ -9,9 +9,11 @@ public enum SharedContainer {
     }
 
     public static func sharedDirectory() -> URL {
+        #if !os(Linux)
         if let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppConfig.appGroup) {
             return container
         }
+        #endif
         return FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
     }
 

@@ -1,13 +1,13 @@
 import Foundation
 
 enum DateParser {
-    private static let isoWithFractional: ISO8601DateFormatter = {
+    private nonisolated(unsafe) static let isoWithFractional: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return f
     }()
 
-    private static let isoPlain: ISO8601DateFormatter = {
+    private nonisolated(unsafe) static let isoPlain: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
         return f
@@ -16,7 +16,7 @@ enum DateParser {
     /// Cache of `DateFormatter` instances keyed by IANA timezone identifier.
     /// Bounded at 30 entries — far more than the number of distinct timezones
     /// that would be active at once.
-    private static let localFormatterCache: NSCache<NSString, DateFormatter> = {
+    private nonisolated(unsafe) static let localFormatterCache: NSCache<NSString, DateFormatter> = {
         let cache = NSCache<NSString, DateFormatter>()
         cache.countLimit = 30
         return cache
