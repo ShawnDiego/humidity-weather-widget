@@ -10,6 +10,6 @@ public enum AppConfig {
     public static let cacheTTL: TimeInterval = 30 * 60
     public static let staleWindow: TimeInterval = 3 * 60 * 60
 
-    public static let requestTimeout: TimeInterval = 4
+    public static let requestTimeout: TimeInterval = 8
     public static let maxConcurrentRequests = 2
 }

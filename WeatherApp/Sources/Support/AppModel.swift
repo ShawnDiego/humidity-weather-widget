@@ -39,7 +39,9 @@ final class AppModel: ObservableObject {
     }
 
     func saveSettings(_ settings: WeatherSettings) async {
-        await factory.settingsStore.save(settings)
+        var normalized = settings
+        normalized.qWeatherAPIKey = settings.qWeatherAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        await factory.settingsStore.save(normalized)
         self.settings = await factory.settingsStore.load()
         WidgetCenter.shared.reloadAllTimelines()
     }

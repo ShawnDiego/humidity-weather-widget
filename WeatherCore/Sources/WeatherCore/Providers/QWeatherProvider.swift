@@ -15,7 +15,7 @@ public struct QWeatherProvider: WeatherProvider {
         }
 
         async let nowResponse = fetchNow(lat: lat, lon: lon)
-        async let sunResponse = fetchSun(lat: lat, lon: lon)
+        async let sunResponse = fetchSun(lat: lat, lon: lon, tz: tz)
 
         let now = try await nowResponse
         let sun = try? await sunResponse
@@ -40,7 +40,7 @@ public struct QWeatherProvider: WeatherProvider {
         }
 
         return WeatherSnapshot(
-            timestamp: ISO8601DateFormatter().date(from: now.obsTime) ?? Date(),
+            timestamp: ISO8601DateFormatter.shared.date(from: now.obsTime) ?? Date(),
             timezone: tz,
             locationName: "当前位置",
             values: values,
@@ -69,8 +69,16 @@ public struct QWeatherProvider: WeatherProvider {
         return now
     }
 
-    private func fetchSun(lat: Double, lon: Double) async throws -> QWeatherSun {
-        let date = DateFormatter.yyyyMMdd.string(from: Date())
+    private func fetchSun(lat: Double, lon: Double, tz: String) async throws -> QWeatherSun {
+        // The QWeather sun API requires the local date at the queried location.
+        // Using UTC here would request the wrong day whenever the UTC date differs
+        // from the location's local date (e.g. after 16:00 UTC for UTC+8).
+        let localTZ = TimeZone(identifier: tz) ?? .current
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd"
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.timeZone = localTZ
+        let date = dateFormatter.string(from: Date())
         let url = try URLRequestBuilder.makeURL(
             base: AppConfig.qWeatherBaseURL,
             path: "/astronomy/sun",
@@ -133,12 +141,6 @@ private struct QWeatherSunResponse: Decodable {
 
 private typealias QWeatherSun = QWeatherSunResponse
 
-private extension DateFormatter {
-    static let yyyyMMdd: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyyMMdd"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        return formatter
-    }()
+private extension ISO8601DateFormatter {
+    nonisolated(unsafe) static let shared: ISO8601DateFormatter = ISO8601DateFormatter()
 }

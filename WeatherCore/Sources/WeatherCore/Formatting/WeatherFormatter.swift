@@ -269,12 +269,26 @@ public enum WeatherFormatter {
         locale.language.languageCode?.identifier.hasPrefix("zh") == true
     }
 
+    private nonisolated(unsafe) static let numberFormatterCache: NSCache<NSString, NumberFormatter> = {
+        let cache = NSCache<NSString, NumberFormatter>()
+        cache.countLimit = 20
+        return cache
+    }()
+
     private static func format(_ value: Double, fractionDigits: Int, locale: Locale) -> String {
-        let formatter = NumberFormatter()
-        formatter.locale = locale
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 0
-        formatter.maximumFractionDigits = fractionDigits
+        let key = NSString(string: "\(locale.identifier)/\(fractionDigits)")
+        let formatter: NumberFormatter
+        if let cached = numberFormatterCache.object(forKey: key) {
+            formatter = cached
+        } else {
+            let newFormatter = NumberFormatter()
+            newFormatter.locale = locale
+            newFormatter.numberStyle = .decimal
+            newFormatter.minimumFractionDigits = 0
+            newFormatter.maximumFractionDigits = fractionDigits
+            numberFormatterCache.setObject(newFormatter, forKey: key)
+            formatter = newFormatter
+        }
         return formatter.string(from: NSNumber(value: value)) ?? String(format: "%.*f", fractionDigits, value)
     }
 }

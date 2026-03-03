@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public protocol NetworkClient: Sendable {
     func send(_ request: URLRequest, timeout: TimeInterval) async throws -> Data

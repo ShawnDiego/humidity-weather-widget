@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 enum URLRequestBuilder {
     static func makeURL(base: URL, path: String, queryItems: [URLQueryItem]) throws -> URL {

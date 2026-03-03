@@ -67,11 +67,12 @@ public struct OpenMeteoProvider: WeatherProvider {
             values[.uvIndex] = uv
         }
 
-        let sunrise = decoded.daily?.sunrise?.first.flatMap(DateParser.parseOpenMeteo(_:))
-        let sunset = decoded.daily?.sunset?.first.flatMap(DateParser.parseOpenMeteo(_:))
+        let effectiveTZ = TimeZone(identifier: decoded.timezone ?? tz) ?? TimeZone(secondsFromGMT: 0)!
+        let sunrise = decoded.daily?.sunrise?.first.flatMap { DateParser.parseOpenMeteo($0, timeZone: effectiveTZ) }
+        let sunset = decoded.daily?.sunset?.first.flatMap { DateParser.parseOpenMeteo($0, timeZone: effectiveTZ) }
 
         return WeatherSnapshot(
-            timestamp: current.time.flatMap(DateParser.parseOpenMeteo(_:)) ?? Date(),
+            timestamp: current.time.flatMap { DateParser.parseOpenMeteo($0, timeZone: effectiveTZ) } ?? Date(),
             timezone: decoded.timezone ?? tz,
             locationName: "当前位置",
             values: values.compactMapValues { $0 },
