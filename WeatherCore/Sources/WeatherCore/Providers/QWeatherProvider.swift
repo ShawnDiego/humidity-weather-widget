@@ -40,7 +40,7 @@ public struct QWeatherProvider: WeatherProvider {
         }
 
         return WeatherSnapshot(
-            timestamp: ISO8601DateFormatter().date(from: now.obsTime) ?? Date(),
+            timestamp: ISO8601DateFormatter.shared.date(from: now.obsTime) ?? Date(),
             timezone: tz,
             locationName: "当前位置",
             values: values,
@@ -141,4 +141,8 @@ private extension DateFormatter {
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         return formatter
     }()
+}
+
+private extension ISO8601DateFormatter {
+    static let shared: ISO8601DateFormatter = ISO8601DateFormatter()
 }
