@@ -27,6 +27,7 @@ struct WeatherWidgetEntryView: View {
         }
         .widgetURL(deepLinkURL)
         .containerBackground(.fill.tertiary, for: .widget)
+        .dynamicTypeSize(.xSmall ... .large)
     }
 
     private var header: some View {
