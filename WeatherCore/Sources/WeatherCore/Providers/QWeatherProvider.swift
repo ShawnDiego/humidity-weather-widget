@@ -42,7 +42,7 @@ public struct QWeatherProvider: WeatherProvider {
         return WeatherSnapshot(
             timestamp: ISO8601DateFormatter().date(from: now.obsTime) ?? Date(),
             timezone: tz,
-            locationName: "当前位置",
+            locationName: WeatherFormatter.localized("当前位置", "Current Location"),
             values: values,
             conditionCode: now.icon,
             sunrise: sunrise,
@@ -64,7 +64,11 @@ public struct QWeatherProvider: WeatherProvider {
         let data = try await network.send(URLRequestBuilder.makeRequest(url: url), timeout: AppConfig.requestTimeout)
         let decoded = try JSONDecoder().decode(QWeatherNowResponse.self, from: data)
         guard decoded.code == "200", let now = decoded.now else {
-            throw WeatherError.apiError(source: "QWeather", code: decoded.code, message: "天气接口返回失败")
+            throw WeatherError.apiError(
+                source: "QWeather",
+                code: decoded.code,
+                message: WeatherFormatter.localized("天气接口返回失败", "Current weather request failed")
+            )
         }
         return now
     }
@@ -84,7 +88,11 @@ public struct QWeatherProvider: WeatherProvider {
         let data = try await network.send(URLRequestBuilder.makeRequest(url: url), timeout: AppConfig.requestTimeout)
         let decoded = try JSONDecoder().decode(QWeatherSunResponse.self, from: data)
         guard decoded.code == "200" else {
-            throw WeatherError.apiError(source: "QWeather", code: decoded.code, message: "日出日落接口返回失败")
+            throw WeatherError.apiError(
+                source: "QWeather",
+                code: decoded.code,
+                message: WeatherFormatter.localized("日出日落接口返回失败", "Sunrise/Sunset request failed")
+            )
         }
         return decoded
     }

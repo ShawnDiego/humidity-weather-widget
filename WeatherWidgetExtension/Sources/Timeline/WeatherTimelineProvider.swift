@@ -63,7 +63,7 @@ struct WeatherTimelineProvider: AppIntentTimelineProvider {
         } catch {
             let fallback = WeatherWidgetEntry.placeholder
             var snapshot = fallback.snapshot
-            snapshot.source = "Error"
+            snapshot.source = WeatherFormatter.localized("错误", "Error")
             snapshot.locationName = configuration.manualCity?.isEmpty == false ? configuration.manualCity! : fallback.snapshot.locationName
 
             return WeatherWidgetEntry(

@@ -14,6 +14,37 @@ public enum WeatherConditionCategory: Sendable {
 }
 
 public enum WeatherFormatter {
+    public static func prefersChinese(_ locale: Locale = .current) -> Bool {
+        if locale.language.languageCode?.identifier.hasPrefix("zh") == true {
+            return true
+        }
+
+        if locale.identifier.lowercased().hasPrefix("zh") {
+            return true
+        }
+        return false
+    }
+
+    public static func localized(_ zh: String, _ en: String, locale: Locale = .current) -> String {
+        prefersChinese(locale) ? zh : en
+    }
+
+    public static func prefersChineseSystem(_ locale: Locale = .current) -> Bool {
+        if prefersChinese(locale) {
+            return true
+        }
+
+        if Locale.preferredLanguages.contains(where: { $0.lowercased().hasPrefix("zh") }) {
+            return true
+        }
+
+        if Bundle.main.preferredLocalizations.contains(where: { $0.lowercased().hasPrefix("zh") }) {
+            return true
+        }
+
+        return false
+    }
+
     public static func effectiveUnitSystem(_ unitSystem: UnitSystem, locale: Locale = .current) -> UnitSystem {
         if unitSystem != .auto { return unitSystem }
         if locale.region?.identifier == "US" {
@@ -23,7 +54,7 @@ public enum WeatherFormatter {
     }
 
     public static func localizedMetricName(_ metric: WeatherMetric, locale: Locale = .current) -> String {
-        if isChineseLocale(locale) {
+        if prefersChinese(locale) {
             switch metric {
             case .temperature: return "温度"
             case .humidity: return "湿度"
@@ -57,7 +88,7 @@ public enum WeatherFormatter {
     }
 
     public static func localizedUnitSystemName(_ unitSystem: UnitSystem, locale: Locale = .current) -> String {
-        if isChineseLocale(locale) {
+        if prefersChinese(locale) {
             switch unitSystem {
             case .auto: return "自动（按地区）"
             case .metric: return "公制（°C, km/h）"
@@ -128,7 +159,7 @@ public enum WeatherFormatter {
     public static func windDirectionText(degrees: Double, locale: Locale = .current) -> String {
         let normalized = ((degrees.truncatingRemainder(dividingBy: 360)) + 360).truncatingRemainder(dividingBy: 360)
         let directions: [String]
-        if isChineseLocale(locale) {
+        if prefersChinese(locale) {
             directions = ["北", "东北", "东", "东南", "南", "西南", "西", "西北", "北"]
         } else {
             directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW", "N"]
@@ -164,7 +195,7 @@ public enum WeatherFormatter {
     }
 
     public static func conditionDescription(for conditionCode: String, locale: Locale = .current) -> String {
-        let chinese = isChineseLocale(locale)
+        let chinese = prefersChinese(locale)
         switch weatherCategory(for: conditionCode) {
         case .clear:
             return chinese ? "晴朗" : "Clear"
@@ -263,10 +294,6 @@ public enum WeatherFormatter {
         default:
             return .unknown
         }
-    }
-
-    private static func isChineseLocale(_ locale: Locale) -> Bool {
-        locale.language.languageCode?.identifier.hasPrefix("zh") == true
     }
 
     private static func format(_ value: Double, fractionDigits: Int, locale: Locale) -> String {

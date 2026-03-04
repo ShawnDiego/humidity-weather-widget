@@ -70,7 +70,7 @@ public struct WeatherServiceFactory {
             return .beijingFallback
         case .manualCity:
             if let manualCoordinates {
-                let cityName = manualCity?.isEmpty == false ? manualCity! : "手动城市"
+                let cityName = manualCity?.isEmpty == false ? manualCity! : WeatherFormatter.localized("手动城市", "Manual City")
                 return ResolvedLocation(
                     name: cityName,
                     latitude: manualCoordinates.lat,
@@ -80,7 +80,7 @@ public struct WeatherServiceFactory {
             }
 
             guard let manualCity, !manualCity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                throw WeatherError.cityNotFound("(空)")
+                throw WeatherError.cityNotFound(WeatherFormatter.localized("(空)", "(empty)"))
             }
 
             let geocoder = makeCityGeocoder(settings: settings)

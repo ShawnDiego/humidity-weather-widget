@@ -3,24 +3,31 @@ import WeatherCore
 
 struct ContentView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.locale) private var locale
     @State private var deepLinkProfileID: UUID?
 
     var body: some View {
-        TabView {
-            ProfileListView(highlightProfileID: deepLinkProfileID)
-                .tabItem {
-                    Label("方案", systemImage: "list.bullet.rectangle")
-                }
+        ZStack {
+            AppGradientBackground()
 
-            LocationSettingsView()
-                .tabItem {
-                    Label("定位", systemImage: "location")
-                }
+            TabView {
+                ProfileListView(highlightProfileID: deepLinkProfileID)
+                    .tabItem {
+                        Label(loc("方案", "Profiles"), systemImage: "square.grid.2x2")
+                    }
 
-            AppSettingsView()
-                .tabItem {
-                    Label("设置", systemImage: "gearshape")
-                }
+                LocationSettingsView()
+                    .tabItem {
+                        Label(loc("定位", "Location"), systemImage: "location.fill")
+                    }
+
+                AppSettingsView()
+                    .tabItem {
+                        Label(loc("设置", "Settings"), systemImage: "slider.horizontal.3")
+                    }
+            }
+            .tint(AppPalette.accent)
+            .fontDesign(.rounded)
         }
         .onOpenURL { url in
             handleDeepLink(url)
@@ -37,5 +44,9 @@ struct ContentView: View {
         }
 
         deepLinkProfileID = uuid
+    }
+
+    private func loc(_ zh: String, _ en: String) -> String {
+        WeatherFormatter.prefersChineseSystem(locale) ? zh : en
     }
 }

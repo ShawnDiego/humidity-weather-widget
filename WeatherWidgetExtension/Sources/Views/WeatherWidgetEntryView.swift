@@ -38,7 +38,7 @@ struct WeatherWidgetEntryView: View {
                 Text(entry.snapshot.timestamp.formatted(date: .omitted, time: .shortened))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                Text(WeatherFormatter.conditionDescription(for: entry.snapshot.conditionCode, locale: locale))
+                Text(WeatherFormatter.conditionDescription(for: entry.snapshot.conditionCode, locale: uiLocale))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -55,7 +55,7 @@ struct WeatherWidgetEntryView: View {
                         metric: .temperature,
                         value: temperature,
                         unitSystem: entry.profile.unitSystem,
-                        locale: locale
+                        locale: uiLocale
                     ))
                         .font(.headline)
                         .contentTransition(.numericText())
@@ -75,7 +75,7 @@ struct WeatherWidgetEntryView: View {
                     metric: metric,
                     value: entry.snapshot.values[metric],
                     unitSystem: entry.profile.unitSystem,
-                    locale: locale
+                    locale: uiLocale
                 )
             }
         }
@@ -142,7 +142,11 @@ struct WeatherWidgetEntryView: View {
     }
 
     private func localized(_ zh: String, _ en: String) -> String {
-        locale.language.languageCode?.identifier.hasPrefix("zh") == true ? zh : en
+        WeatherFormatter.prefersChineseSystem(locale) ? zh : en
+    }
+
+    private var uiLocale: Locale {
+        Locale(identifier: Locale.preferredLanguages.first ?? locale.identifier)
     }
 }
 

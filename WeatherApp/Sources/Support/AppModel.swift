@@ -51,15 +51,19 @@ final class AppModel: ObservableObject {
     }
 
     func testConnectivity() async {
-        statusMessage = "测试中..."
+        statusMessage = loc("测试中...", "Testing...")
         let settings = await factory.settingsStore.load()
         let provider = factory.makeWeatherProvider(settings: settings)
 
         do {
             let snapshot = try await provider.fetchCurrent(lat: 39.9042, lon: 116.4074, tz: "Asia/Shanghai")
-            statusMessage = "成功：\(snapshot.source) 返回可用数据"
+            statusMessage = "\(loc("成功", "Success")): \(snapshot.source) \(loc("返回可用数据", "returned valid data"))"
         } catch {
-            statusMessage = "失败：\(error.localizedDescription)"
+            statusMessage = "\(loc("失败", "Failed")): \(error.localizedDescription)"
         }
+    }
+
+    private func loc(_ zh: String, _ en: String) -> String {
+        WeatherFormatter.prefersChineseSystem() ? zh : en
     }
 }

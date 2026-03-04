@@ -3,16 +3,18 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		0BF073792388FB12443E0869 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3D6E3921C4081E64758EF74 /* AppModel.swift */; };
+		11D5338FB5BC6CA98F7603CB /* AppVisualStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5EBF9CB81358F2A51D678E5 /* AppVisualStyle.swift */; };
 		16D4B29F8BBEE672F653208F /* WeatherWidgetEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D81F52CC7D78E9E8DFF7A3F2 /* WeatherWidgetEntry.swift */; };
 		239196229758E57A5A79319A /* WeatherWidgetEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D81F52CC7D78E9E8DFF7A3F2 /* WeatherWidgetEntry.swift */; };
 		2E09AF9D39BF3FC96EDCEC3C /* LocationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04CD58B3CA73D25755164C53 /* LocationSettingsView.swift */; };
 		3AC951243C36AD19E6B996BA /* LocationPermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2C9493E38D7E10F344CD3E /* LocationPermissionManager.swift */; };
 		4C3189DAE2A84D87B2D37EBA /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3D6E3921C4081E64758EF74 /* AppModel.swift */; };
+		4FE36BD403D34ED0C0868545 /* AppVisualStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5EBF9CB81358F2A51D678E5 /* AppVisualStyle.swift */; };
 		5C5A9921B5C15562337FCF60 /* WeatherWidgetmacOS.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B20279613BCF6CD20FB95C7F /* WeatherWidgetmacOS.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		5F3A513C82027E02BF82C3AD /* WeatherWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A324C819212012057B78F3 /* WeatherWidgets.swift */; };
 		5F73080A9295C37C79D429A0 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27572FE5D9F5118D49D28119 /* ContentView.swift */; };
@@ -83,18 +85,19 @@
 
 /* Begin PBXFileReference section */
 		04CD58B3CA73D25755164C53 /* LocationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationSettingsView.swift; sourceTree = "<group>"; };
-		0E701D4C05945988734BB0BD /* WeatherAppiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = WeatherAppiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0E701D4C05945988734BB0BD /* WeatherAppiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WeatherAppiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		23EEC9D8F4C8632E4554CD8E /* AppSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsView.swift; sourceTree = "<group>"; };
 		27572FE5D9F5118D49D28119 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		38049ADE8F1387867920970E /* WeatherAppmacOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WeatherAppmacOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F386643C10735648A71A94F /* ProfileListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileListView.swift; sourceTree = "<group>"; };
-		5271028E1E7F0E9F2D103CC6 /* WeatherWidgetiOS.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = WeatherWidgetiOS.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		787BE565AE9E9D35AD6B4838 /* WeatherCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = WeatherCore; path = WeatherCore; sourceTree = SOURCE_ROOT; };
+		5271028E1E7F0E9F2D103CC6 /* WeatherWidgetiOS.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WeatherWidgetiOS.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		787BE565AE9E9D35AD6B4838 /* WeatherCore */ = {isa = PBXFileReference; lastKnownFileType = folder; path = WeatherCore; sourceTree = SOURCE_ROOT; };
 		97A324C819212012057B78F3 /* WeatherWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherWidgets.swift; sourceTree = "<group>"; };
 		A84FC3D44F2A3E4624D8C34D /* WeatherTimelineProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherTimelineProvider.swift; sourceTree = "<group>"; };
 		B20279613BCF6CD20FB95C7F /* WeatherWidgetmacOS.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WeatherWidgetmacOS.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C4CBBAA6015DB169CBC84119 /* WeatherWidgetConfigurationIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherWidgetConfigurationIntent.swift; sourceTree = "<group>"; };
 		D3D6E3921C4081E64758EF74 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		D5EBF9CB81358F2A51D678E5 /* AppVisualStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVisualStyle.swift; sourceTree = "<group>"; };
 		D81F52CC7D78E9E8DFF7A3F2 /* WeatherWidgetEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherWidgetEntry.swift; sourceTree = "<group>"; };
 		DBDD7CD22E41B88CCE046EB9 /* WeatherAppMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherAppMain.swift; sourceTree = "<group>"; };
 		DC2C9493E38D7E10F344CD3E /* LocationPermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPermissionManager.swift; sourceTree = "<group>"; };
@@ -141,6 +144,7 @@
 			isa = PBXGroup;
 			children = (
 				23EEC9D8F4C8632E4554CD8E /* AppSettingsView.swift */,
+				D5EBF9CB81358F2A51D678E5 /* AppVisualStyle.swift */,
 				27572FE5D9F5118D49D28119 /* ContentView.swift */,
 				04CD58B3CA73D25755164C53 /* LocationSettingsView.swift */,
 				4F386643C10735648A71A94F /* ProfileListView.swift */,
@@ -340,7 +344,21 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 2630;
+				TargetAttributes = {
+					20488018F3EC1664AEFCD5AC = {
+						DevelopmentTeam = N9X59A9RBT;
+						ProvisioningStyle = Automatic;
+					};
+					D534533AACD6B3A46AF2153B = {
+						DevelopmentTeam = N9X59A9RBT;
+						ProvisioningStyle = Automatic;
+					};
+					ECEB3FFEE244789C893320B7 = {
+						DevelopmentTeam = N9X59A9RBT;
+						ProvisioningStyle = Automatic;
+					};
+				};
 			};
 			buildConfigurationList = 67CBF64A11A60685FE347981 /* Build configuration list for PBXProject "HumidityWeather" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -355,7 +373,6 @@
 			packageReferences = (
 				450B2A490F702AC017837005 /* XCLocalSwiftPackageReference "WeatherCore" */,
 			);
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -386,6 +403,7 @@
 			files = (
 				4C3189DAE2A84D87B2D37EBA /* AppModel.swift in Sources */,
 				95BF5F74A5AE7159DA4622ED /* AppSettingsView.swift in Sources */,
+				11D5338FB5BC6CA98F7603CB /* AppVisualStyle.swift in Sources */,
 				D1C8BD064D12BC1420EB5550 /* ContentView.swift in Sources */,
 				D388FB0D19C4A01A1E3A68A4 /* LocationPermissionManager.swift in Sources */,
 				2E09AF9D39BF3FC96EDCEC3C /* LocationSettingsView.swift in Sources */,
@@ -412,6 +430,7 @@
 			files = (
 				0BF073792388FB12443E0869 /* AppModel.swift in Sources */,
 				65C7F22EA695401F06D789CD /* AppSettingsView.swift in Sources */,
+				4FE36BD403D34ED0C0868545 /* AppVisualStyle.swift in Sources */,
 				5F73080A9295C37C79D429A0 /* ContentView.swift in Sources */,
 				3AC951243C36AD19E6B996BA /* LocationPermissionManager.swift in Sources */,
 				989C603FB22E5B4AC524B4C7 /* LocationSettingsView.swift in Sources */,
@@ -469,11 +488,15 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = N9X59A9RBT;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -488,6 +511,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 6.0;
@@ -516,7 +540,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Config/WeatherWidget.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = N9X59A9RBT;
+				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = "WeatherWidgetExtension/Info-macOS.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -524,6 +553,8 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.diego.humidity.macos.widget;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				REGISTER_APP_GROUPS = YES;
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -534,12 +565,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/WeatherApp.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEAD_CODE_STRIPPING = YES;
 				INFOPLIST_FILE = "WeatherApp/Info-macOS.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.diego.humidity.macos;
+				REGISTER_APP_GROUPS = YES;
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -582,7 +615,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Config/WeatherWidget.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = N9X59A9RBT;
+				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = "WeatherWidgetExtension/Info-macOS.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -590,6 +628,8 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.diego.humidity.macos.widget;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				REGISTER_APP_GROUPS = YES;
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -600,12 +640,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/WeatherApp.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEAD_CODE_STRIPPING = YES;
 				INFOPLIST_FILE = "WeatherApp/Info-macOS.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.diego.humidity.macos;
+				REGISTER_APP_GROUPS = YES;
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -659,11 +701,15 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = N9X59A9RBT;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -685,6 +731,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;

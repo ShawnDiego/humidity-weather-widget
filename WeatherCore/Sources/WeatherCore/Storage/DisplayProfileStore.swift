@@ -26,7 +26,7 @@ public actor DisplayProfileStore {
             var normalized = profile
             normalized.sanitizeMetrics()
             if normalized.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                normalized.name = "未命名方案"
+                normalized.name = WeatherFormatter.localized("未命名方案", "Untitled Profile")
             }
             return normalized
         }

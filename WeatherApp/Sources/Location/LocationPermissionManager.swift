@@ -29,7 +29,10 @@ final class LocationPermissionManager: NSObject, ObservableObject {
         case .notDetermined:
             requestPermission()
         default:
-            errorMessage = "定位权限未开启，请在系统设置中允许定位。"
+            errorMessage = loc(
+                "定位权限未开启，请在系统设置中允许定位。",
+                "Location permission is disabled. Please enable it in system settings."
+            )
         }
     }
 }
@@ -48,7 +51,7 @@ extension LocationPermissionManager: @preconcurrency CLLocationManagerDelegate {
         Task {
             do {
                 let placemark = try await geocoder.reverseGeocodeLocation(location).first
-                let city = placemark?.locality ?? placemark?.administrativeArea ?? "当前位置"
+                let city = placemark?.locality ?? placemark?.administrativeArea ?? loc("当前位置", "Current Location")
                 let timezone = placemark?.timeZone?.identifier ?? "Asia/Shanghai"
                 latestStoredLocation = StoredLocation(
                     latitude: location.coordinate.latitude,
@@ -62,17 +65,20 @@ extension LocationPermissionManager: @preconcurrency CLLocationManagerDelegate {
                 latestStoredLocation = StoredLocation(
                     latitude: location.coordinate.latitude,
                     longitude: location.coordinate.longitude,
-                    name: "当前位置",
+                    name: loc("当前位置", "Current Location"),
                     timezone: TimeZone.current.identifier,
                     updatedAt: Date()
                 )
-                errorMessage = "反向地理编码失败，已保存坐标。"
+                errorMessage = loc(
+                    "反向地理编码失败，已保存坐标。",
+                    "Reverse geocoding failed, coordinates were saved."
+                )
             }
         }
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        errorMessage = "定位失败：\(error.localizedDescription)"
+        errorMessage = "\(loc("定位失败", "Location failed")): \(error.localizedDescription)"
     }
 
     private func isAuthorized(_ status: CLAuthorizationStatus) -> Bool {
@@ -81,5 +87,9 @@ extension LocationPermissionManager: @preconcurrency CLLocationManagerDelegate {
 #else
         return status == .authorizedWhenInUse || status == .authorizedAlways
 #endif
+    }
+
+    private func loc(_ zh: String, _ en: String) -> String {
+        WeatherFormatter.prefersChineseSystem() ? zh : en
     }
 }

@@ -3,6 +3,7 @@ import WeatherCore
 
 struct ProfileListView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.locale) private var locale
     @State private var editorDraft: DisplayProfile?
     @State private var showingCreate = false
 
@@ -10,90 +11,193 @@ struct ProfileListView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(model.profiles) { profile in
-                    Button {
-                        editorDraft = profile
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(profile.name)
-                                    .font(.headline)
-                                Text(profile.metrics.map { WeatherFormatter.localizedMetricName($0) }.joined(separator: " · "))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(2)
-                                Text(WeatherFormatter.localizedUnitSystemName(profile.unitSystem))
-                                    .font(.caption2)
-                                    .foregroundStyle(.tertiary)
+            ZStack {
+                AppGradientBackground()
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        AppSectionHeader(
+                            title: loc("显示方案", "Display Profiles"),
+                            subtitle: loc(
+                                "为不同小组件实例创建独立字段组合与单位设置",
+                                "Create independent metric sets and unit rules for each widget"
+                            )
+                        )
+
+                        if model.profiles.isEmpty {
+                            AppCard {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Label(loc("还没有方案", "No Profiles Yet"), systemImage: "square.grid.2x2")
+                                        .font(.system(.headline, design: .rounded, weight: .bold))
+                                        .foregroundStyle(.white)
+                                    Text(loc(
+                                        "点击右上角 + 创建你的第一个天气显示方案。",
+                                        "Tap + in the top-right to create your first weather display profile."
+                                    ))
+                                        .font(.system(.subheadline, design: .rounded))
+                                        .foregroundStyle(.white.opacity(0.72))
+                                }
                             }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(.tertiary)
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(model.profiles) { profile in
+                                    ProfileCard(
+                                        profile: profile,
+                                        isHighlighted: highlightProfileID == profile.id,
+                                        onEdit: { editorDraft = profile },
+                                        onDelete: {
+                                            Task {
+                                                await model.deleteProfile(id: profile.id)
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                            .animation(.spring(response: 0.3, dampingFraction: 0.84), value: model.profiles)
                         }
-                        .padding(.vertical, 4)
-                        .listRowBackground(highlightProfileID == profile.id ? Color.yellow.opacity(0.15) : Color.clear)
                     }
-                    .buttonStyle(.plain)
-                }
-                .onDelete { offsets in
-                    for index in offsets {
-                        let profile = model.profiles[index]
-                        Task {
-                            await model.deleteProfile(id: profile.id)
-                        }
-                    }
+                    .padding(.horizontal, 18)
+                    .padding(.top, 18)
+                    .padding(.bottom, 26)
+                    .frame(maxWidth: 960)
+                    .frame(maxWidth: .infinity)
                 }
             }
-            .navigationTitle("显示方案")
+            .navigationTitle(loc("方案", "Profiles"))
             .toolbar {
 #if os(iOS)
-                ToolbarItem(placement: .topBarLeading) {
-                    EditButton()
-                }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingCreate = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
+                    addButton
                 }
 #else
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showingCreate = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
+                    addButton
                 }
 #endif
             }
             .sheet(isPresented: $showingCreate) {
-                NavigationStack {
-                    ProfileEditorView(profile: nil) { profile in
-                        Task {
-                            await model.upsertProfile(profile)
-                            showingCreate = false
-                        }
+                editorSheet(profile: nil) { profile in
+                    Task {
+                        await model.upsertProfile(profile)
+                        showingCreate = false
                     }
                 }
             }
             .sheet(item: $editorDraft) { profile in
-                NavigationStack {
-                    ProfileEditorView(profile: profile) { updated in
-                        Task {
-                            await model.upsertProfile(updated)
-                            editorDraft = nil
-                        }
+                editorSheet(profile: profile) { updated in
+                    Task {
+                        await model.upsertProfile(updated)
+                        editorDraft = nil
                     }
                 }
             }
         }
     }
+
+    private var addButton: some View {
+        Button {
+            showingCreate = true
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(.body, design: .rounded, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 34, height: 34)
+                .background(Color.white.opacity(0.12))
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(0.20), lineWidth: 1)
+                )
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func loc(_ zh: String, _ en: String) -> String {
+        WeatherFormatter.prefersChineseSystem(locale) ? zh : en
+    }
+
+    @ViewBuilder
+    private func editorSheet(profile: DisplayProfile?, onSave: @escaping (DisplayProfile) -> Void) -> some View {
+        NavigationStack {
+            ProfileEditorView(profile: profile, onSave: onSave)
+        }
+#if os(macOS)
+        .frame(minWidth: 560, minHeight: 620)
+#else
+        .presentationDetents([.medium, .large])
+#endif
+    }
+}
+
+private struct ProfileCard: View {
+    @Environment(\.locale) private var locale
+
+    let profile: DisplayProfile
+    let isHighlighted: Bool
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .center, spacing: 8) {
+                    Label(profile.name, systemImage: "square.grid.2x2.fill")
+                        .font(.system(.headline, design: .rounded, weight: .bold))
+                        .foregroundStyle(.white)
+
+                    if isHighlighted {
+                        StatusBadge(text: loc("已关联组件", "Linked to Widget"), tone: .good)
+                    }
+
+                    Spacer()
+
+                    StatusBadge(
+                        text: WeatherFormatter.localizedUnitSystemName(profile.unitSystem, locale: uiLocale),
+                        tone: .neutral
+                    )
+                }
+
+                WrappingFlowLayout(horizontalSpacing: 10, verticalSpacing: 10) {
+                    ForEach(profile.metrics, id: \.self) { metric in
+                        MetricChip(
+                            title: WeatherFormatter.localizedMetricName(metric, locale: uiLocale),
+                            symbol: WeatherFormatter.metricSymbol(for: metric)
+                        )
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                HStack(spacing: 10) {
+                    Button(loc("编辑", "Edit")) {
+                        onEdit()
+                    }
+                    .buttonStyle(AppSecondaryButtonStyle())
+
+                    Button(loc("删除", "Delete"), role: .destructive) {
+                        onDelete()
+                    }
+                    .buttonStyle(AppSecondaryButtonStyle())
+                }
+            }
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(isHighlighted ? AppPalette.accent.opacity(0.85) : .clear, lineWidth: 1.5)
+        )
+    }
+
+    private func loc(_ zh: String, _ en: String) -> String {
+        WeatherFormatter.prefersChineseSystem(locale) ? zh : en
+    }
+
+    private var uiLocale: Locale {
+        Locale(identifier: Locale.preferredLanguages.first ?? locale.identifier)
+    }
 }
 
 private struct ProfileEditorView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
 
     let profile: DisplayProfile?
     let onSave: (DisplayProfile) -> Void
@@ -115,22 +219,24 @@ private struct ProfileEditorView: View {
     }
 
     var body: some View {
-        List {
-            Section("基本设置") {
-                TextField("方案名称", text: $name)
-                Picker("单位", selection: $unitSystem) {
-                    Text(WeatherFormatter.localizedUnitSystemName(.auto)).tag(UnitSystem.auto)
-                    Text(WeatherFormatter.localizedUnitSystemName(.metric)).tag(UnitSystem.metric)
-                    Text(WeatherFormatter.localizedUnitSystemName(.imperial)).tag(UnitSystem.imperial)
+        Form {
+            Section(loc("基本设置", "Basic Settings")) {
+                TextField(loc("方案名称", "Profile Name"), text: $name)
+                Picker(loc("单位", "Units"), selection: $unitSystem) {
+                    Text(WeatherFormatter.localizedUnitSystemName(.auto, locale: uiLocale)).tag(UnitSystem.auto)
+                    Text(WeatherFormatter.localizedUnitSystemName(.metric, locale: uiLocale)).tag(UnitSystem.metric)
+                    Text(WeatherFormatter.localizedUnitSystemName(.imperial, locale: uiLocale)).tag(UnitSystem.imperial)
                 }
             }
 
-            Section("显示字段（点选启用，拖动排序）") {
+            Section(loc("显示字段（点选启用，拖动排序）", "Visible Metrics (tap to toggle, drag to reorder)")) {
                 ForEach(orderedMetrics, id: \.self) { metric in
                     HStack {
                         Image(systemName: selectedMetrics.contains(metric) ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(selectedMetrics.contains(metric) ? .blue : .secondary)
-                        Text(WeatherFormatter.localizedMetricName(metric))
+                            .foregroundStyle(selectedMetrics.contains(metric) ? AppPalette.accent : .secondary)
+                        Image(systemName: WeatherFormatter.metricSymbol(for: metric))
+                            .foregroundStyle(.secondary)
+                        Text(WeatherFormatter.localizedMetricName(metric, locale: uiLocale))
                         Spacer()
                     }
                     .contentShape(Rectangle())
@@ -143,15 +249,16 @@ private struct ProfileEditorView: View {
                 }
             }
         }
-        .navigationTitle(profile == nil ? "新建方案" : "编辑方案")
+        .formStyle(.grouped)
+        .navigationTitle(profile == nil ? loc("新建方案", "New Profile") : loc("编辑方案", "Edit Profile"))
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("取消") {
+                Button(loc("取消", "Cancel")) {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button("保存") {
+                Button(loc("保存", "Save")) {
                     save()
                 }
             }
@@ -192,6 +299,14 @@ private struct ProfileEditorView: View {
     }
 
     private var defaultProfileName: String {
-        Locale.current.language.languageCode?.identifier.hasPrefix("zh") == true ? "未命名方案" : "Untitled Profile"
+        loc("未命名方案", "Untitled Profile")
+    }
+
+    private func loc(_ zh: String, _ en: String) -> String {
+        WeatherFormatter.prefersChineseSystem(locale) ? zh : en
+    }
+
+    private var uiLocale: Locale {
+        Locale(identifier: Locale.preferredLanguages.first ?? locale.identifier)
     }
 }

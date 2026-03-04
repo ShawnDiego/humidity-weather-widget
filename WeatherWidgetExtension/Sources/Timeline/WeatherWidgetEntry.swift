@@ -14,7 +14,7 @@ struct WeatherWidgetEntry: TimelineEntry {
         let snapshot = WeatherSnapshot(
             timestamp: Date(),
             timezone: "Asia/Shanghai",
-            locationName: "北京",
+            locationName: WeatherFormatter.localized("北京", "Beijing"),
             values: [
                 .temperature: 22,
                 .humidity: 55,
@@ -25,7 +25,7 @@ struct WeatherWidgetEntry: TimelineEntry {
             conditionCode: "100",
             sunrise: nil,
             sunset: nil,
-            source: "Preview"
+            source: WeatherFormatter.localized("预览", "Preview")
         )
         return WeatherWidgetEntry(
             date: Date(),

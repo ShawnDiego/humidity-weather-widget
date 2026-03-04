@@ -73,7 +73,7 @@ public struct OpenMeteoProvider: WeatherProvider {
         return WeatherSnapshot(
             timestamp: current.time.flatMap(DateParser.parseOpenMeteo(_:)) ?? Date(),
             timezone: decoded.timezone ?? tz,
-            locationName: "当前位置",
+            locationName: WeatherFormatter.localized("当前位置", "Current Location"),
             values: values.compactMapValues { $0 },
             conditionCode: current.weatherCode.map { String($0) } ?? "unknown",
             sunrise: sunrise,

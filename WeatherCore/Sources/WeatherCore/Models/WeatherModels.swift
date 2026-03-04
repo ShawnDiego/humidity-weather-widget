@@ -15,7 +15,8 @@ public enum WeatherMetric: String, Codable, CaseIterable, Sendable {
     case precipitationProbability
 
     public var displayName: String {
-        WeatherFormatter.localizedMetricName(self)
+        let id = Locale.preferredLanguages.first ?? Locale.current.identifier
+        return WeatherFormatter.localizedMetricName(self, locale: Locale(identifier: id))
     }
 }
 
@@ -59,7 +60,7 @@ public struct DisplayProfile: Identifiable, Codable, Hashable, Sendable {
 
     public static var `default`: DisplayProfile {
         DisplayProfile(
-            name: "默认方案",
+            name: WeatherFormatter.localized("默认方案", "Default Profile"),
             metrics: [.temperature, .humidity, .condition, .windSpeed, .windDirection, .daylightDuration],
             unitSystem: .auto
         )
@@ -146,7 +147,12 @@ public struct ResolvedLocation: Codable, Hashable, Sendable {
     }
 
     public static var beijingFallback: ResolvedLocation {
-        ResolvedLocation(name: "北京", latitude: 39.9042, longitude: 116.4074, timezone: "Asia/Shanghai")
+        ResolvedLocation(
+            name: WeatherFormatter.localized("北京", "Beijing"),
+            latitude: 39.9042,
+            longitude: 116.4074,
+            timezone: "Asia/Shanghai"
+        )
     }
 }
 
