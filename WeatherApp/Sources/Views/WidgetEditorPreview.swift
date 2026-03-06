@@ -2,24 +2,123 @@ import SwiftUI
 import WeatherCore
 import WidgetKit
 
-struct WeatherWidgetEntryView: View {
-    @Environment(\.widgetFamily) private var family
-    @Environment(\.locale) private var locale
+enum WidgetPreviewSize: String, CaseIterable, Identifiable {
+    case small
+    case medium
+    case large
 
-    let entry: WeatherWidgetEntry
+    var id: String { rawValue }
+
+    var widgetFamily: WidgetFamily {
+        switch self {
+        case .small:
+            return .systemSmall
+        case .medium:
+            return .systemMedium
+        case .large:
+            return .systemLarge
+        }
+    }
+
+    func label(prefersChinese: Bool) -> String {
+        switch self {
+        case .small:
+            return prefersChinese ? "小号" : "Small"
+        case .medium:
+            return prefersChinese ? "中号" : "Medium"
+        case .large:
+            return prefersChinese ? "大号" : "Large"
+        }
+    }
+}
+
+enum WidgetPreviewWeather: String, CaseIterable, Identifiable {
+    case clear
+    case rain
+    case downpour
+    case snow
+    case thunderstorm
+    case haze
+
+    var id: String { rawValue }
+
+    var conditionCode: String {
+        switch self {
+        case .clear:
+            return "100"
+        case .rain:
+            return "301"
+        case .downpour:
+            return "312"
+        case .snow:
+            return "400"
+        case .thunderstorm:
+            return "302"
+        case .haze:
+            return "502"
+        }
+    }
+
+    func label(prefersChinese: Bool) -> String {
+        switch self {
+        case .clear:
+            return prefersChinese ? "晴" : "Clear"
+        case .rain:
+            return prefersChinese ? "雨" : "Rain"
+        case .downpour:
+            return prefersChinese ? "大雨" : "Heavy Rain"
+        case .snow:
+            return prefersChinese ? "雪" : "Snow"
+        case .thunderstorm:
+            return prefersChinese ? "雷暴" : "Thunderstorm"
+        case .haze:
+            return prefersChinese ? "霾" : "Haze"
+        }
+    }
+}
+
+struct WidgetEditorPreview: View {
+    let profile: DisplayProfile
+    let locale: Locale
+    let widgetFamily: WidgetFamily
+    let conditionCode: String
+    let isNight: Bool
+    let locationName: String
+
+    private let sampleValues: [WeatherMetric: Double] = [
+        .temperature: 23,
+        .humidity: 67,
+        .solarIrradiance: 520,
+        .daylightDuration: 11.6,
+        .windSpeed: 18.2,
+        .windDirection: 135,
+        .feelsLike: 25,
+        .pressure: 1006,
+        .visibility: 8.4,
+        .uvIndex: 5.3,
+        .precipitationProbability: 64
+    ]
 
     var body: some View {
-        content
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .widgetURL(deepLinkURL)
-            .containerBackground(for: .widget) {
-                WeatherWidgetBackground(category: conditionCategory, isNight: isNight)
-            }
+        ZStack(alignment: .topLeading) {
+            WeatherWidgetBackground(category: conditionCategory, isNight: isNight)
+
+            content
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+        }
+        .frame(width: previewCanvasSize.width, height: previewCanvasSize.height, alignment: .topLeading)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.white.opacity(0.20), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.22), radius: 10, x: 0, y: 6)
     }
 
     @ViewBuilder
     private var content: some View {
-        switch family {
+        switch widgetFamily {
         case .systemSmall:
             smallLayout
         case .systemMedium:
@@ -35,7 +134,7 @@ struct WeatherWidgetEntryView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .top, spacing: 6) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.snapshot.locationName)
+                    Text(locationName)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(theme.primaryText)
                         .lineLimit(1)
@@ -49,7 +148,7 @@ struct WeatherWidgetEntryView: View {
                         .lineLimit(1)
                 }
                 Spacer(minLength: 4)
-                weatherGlyph(for: .systemSmall)
+                glyph
             }
 
             if let temperatureText {
@@ -58,17 +157,9 @@ struct WeatherWidgetEntryView: View {
                     .foregroundStyle(theme.primaryText)
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
-                    .contentTransition(.numericText())
             }
 
-            metricGrid(for: .systemSmall, columns: 1, style: .compact)
-
-            if entry.freshness == .stale {
-                Text(localized("数据可能过期", "Data may be stale"))
-                    .font(.caption2)
-                    .foregroundStyle(theme.staleText)
-                    .lineLimit(1)
-            }
+            metricListSection(columns: 1, maxCount: 2)
         }
     }
 
@@ -76,7 +167,7 @@ struct WeatherWidgetEntryView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.snapshot.locationName)
+                    Text(locationName)
                         .font(.headline)
                         .foregroundStyle(theme.primaryText)
                         .lineLimit(1)
@@ -91,26 +182,18 @@ struct WeatherWidgetEntryView: View {
                 }
                 Spacer(minLength: 6)
                 VStack(alignment: .trailing, spacing: 3) {
-                    weatherGlyph(for: .systemMedium)
+                    glyph
                     if let temperatureText {
                         Text(temperatureText)
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(theme.primaryText)
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
-                            .contentTransition(.numericText())
                     }
                 }
             }
 
-            metricGrid(for: .systemMedium, columns: 2, style: .regular)
-
-            if entry.freshness == .stale {
-                Text(localized("数据可能过期", "Data may be stale"))
-                    .font(.caption2)
-                    .foregroundStyle(theme.staleText)
-                    .lineLimit(1)
-            }
+            metricListSection(columns: 2, maxCount: 4)
         }
     }
 
@@ -118,7 +201,7 @@ struct WeatherWidgetEntryView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.snapshot.locationName)
+                    Text(locationName)
                         .font(.headline)
                         .foregroundStyle(theme.primaryText)
                         .lineLimit(1)
@@ -133,54 +216,35 @@ struct WeatherWidgetEntryView: View {
                 }
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 3) {
-                    weatherGlyph(for: .systemLarge)
+                    glyph
                     if let temperatureText {
                         Text(temperatureText)
                             .font(.title2.weight(.bold))
                             .foregroundStyle(theme.primaryText)
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
-                            .contentTransition(.numericText())
                     }
                 }
             }
 
-            metricGrid(for: .systemLarge, columns: 2, style: .spacious)
-
-            Spacer(minLength: 0)
-
-            if entry.freshness == .stale || entry.showsSource {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    if entry.freshness == .stale {
-                        Text(localized("数据可能过期", "Data may be stale"))
-                            .foregroundStyle(theme.staleText)
-                    }
-                    Spacer(minLength: 0)
-                    if entry.showsSource {
-                        Text("\(localized("来源", "Source")): \(entry.snapshot.source)")
-                            .foregroundStyle(theme.tertiaryText)
-                    }
-                }
-                .font(.caption2)
-                .lineLimit(1)
-            }
+            metricListSection(columns: 2, maxCount: 8)
         }
     }
 
     @ViewBuilder
-    private func metricGrid(for widgetFamily: WidgetFamily, columns: Int, style: MetricCell.Style) -> some View {
-        let metrics = metricList(for: widgetFamily)
+    private func metricListSection(columns: Int, maxCount: Int) -> some View {
+        let filteredMetrics = profile.metrics.filter { $0 != .temperature && $0 != .condition }
+        let metrics = Array(filteredMetrics.prefix(maxCount))
         let gridColumns = Array(repeating: GridItem(.flexible(), spacing: 6), count: columns)
 
         if !metrics.isEmpty {
             LazyVGrid(columns: gridColumns, alignment: .leading, spacing: 6) {
                 ForEach(metrics, id: \.self) { metric in
-                    MetricCell(
+                    PreviewMetricCell(
                         metric: metric,
-                        value: entry.snapshot.values[metric],
-                        unitSystem: entry.profile.unitSystem,
-                        locale: uiLocale,
-                        style: style,
+                        value: sampleValues[metric],
+                        unitSystem: profile.unitSystem,
+                        locale: locale,
                         secondaryTextColor: theme.metricSecondaryText,
                         primaryTextColor: theme.primaryText
                     )
@@ -189,7 +253,7 @@ struct WeatherWidgetEntryView: View {
         }
     }
 
-    private func weatherGlyph(for widgetFamily: WidgetFamily) -> some View {
+    private var glyph: some View {
         WeatherGlyph(
             category: conditionCategory,
             isNight: isNight,
@@ -199,40 +263,21 @@ struct WeatherWidgetEntryView: View {
         .shadow(color: .black.opacity(0.16), radius: 3, x: 0, y: 1)
     }
 
-    private var filteredMetrics: [WeatherMetric] {
-        entry.profile.metrics.filter { $0 != .temperature && $0 != .condition }
-    }
-
-    private func metricList(for widgetFamily: WidgetFamily) -> [WeatherMetric] {
-        Array(filteredMetrics.prefix(maxMetricCount(for: widgetFamily)))
-    }
-
-    private func maxMetricCount(for widgetFamily: WidgetFamily) -> Int {
+    private var previewCanvasSize: CGSize {
         switch widgetFamily {
         case .systemSmall:
-            return 2
+            return CGSize(width: 154, height: 154)
         case .systemMedium:
-            return 4
+            return CGSize(width: 320, height: 154)
         case .systemLarge:
-            return 8
+            return CGSize(width: 320, height: 220)
         default:
-            return 4
+            return CGSize(width: 320, height: 154)
         }
     }
 
-    private var deepLinkURL: URL? {
-        var components = URLComponents()
-        components.scheme = "humidity"
-        components.host = "weather"
-        components.queryItems = [
-            URLQueryItem(name: "profileId", value: entry.profile.id.uuidString),
-            URLQueryItem(name: "location", value: entry.snapshot.locationName)
-        ]
-        return components.url
-    }
-
     private var conditionCategory: WeatherConditionCategory {
-        WeatherFormatter.weatherCategory(for: entry.snapshot.conditionCode)
+        WeatherFormatter.weatherCategory(for: conditionCode)
     }
 
     private var theme: WeatherWidgetTheme {
@@ -240,91 +285,36 @@ struct WeatherWidgetEntryView: View {
     }
 
     private var conditionText: String {
-        WeatherFormatter.conditionDescription(for: entry.snapshot.conditionCode, locale: uiLocale)
+        WeatherFormatter.conditionDescription(for: conditionCode, locale: locale)
     }
 
     private var timestampText: String {
-        entry.snapshot.timestamp.formatted(date: .omitted, time: .shortened)
+        Date().formatted(date: .omitted, time: .shortened)
     }
 
     private var temperatureText: String? {
-        guard let temperature = entry.snapshot.values[.temperature] else {
+        guard let temperature = sampleValues[.temperature] else {
             return nil
         }
         return WeatherFormatter.formattedValue(
             metric: .temperature,
             value: temperature,
-            unitSystem: entry.profile.unitSystem,
-            locale: uiLocale
+            unitSystem: profile.unitSystem,
+            locale: locale
         )
-    }
-
-    private var isNight: Bool {
-        guard let sunrise = entry.snapshot.sunrise, let sunset = entry.snapshot.sunset else {
-            return false
-        }
-        return entry.snapshot.timestamp < sunrise || entry.snapshot.timestamp >= sunset
-    }
-
-    private func localized(_ zh: String, _ en: String) -> String {
-        WeatherFormatter.prefersChineseSystem(locale) ? zh : en
-    }
-
-    private var uiLocale: Locale {
-        locale
     }
 }
 
-private struct MetricCell: View {
-    enum Style {
-        case compact
-        case regular
-        case spacious
-    }
-
+private struct PreviewMetricCell: View {
     let metric: WeatherMetric
     let value: Double?
     let unitSystem: UnitSystem
     let locale: Locale
-    let style: Style
     let secondaryTextColor: Color
     let primaryTextColor: Color
 
     var body: some View {
-        Group {
-            switch style {
-            case .compact:
-                compactBody
-            case .regular, .spacious:
-                regularBody
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var compactBody: some View {
-        HStack(spacing: 5) {
-            Image(systemName: WeatherFormatter.metricSymbol(for: metric))
-                .font(.caption2)
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(secondaryTextColor)
-            Text(WeatherFormatter.localizedMetricName(metric, locale: locale))
-                .font(.caption2)
-                .foregroundStyle(secondaryTextColor)
-                .lineLimit(1)
-            Spacer(minLength: 4)
-            Text(displayText)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(primaryTextColor)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .contentTransition(.numericText())
-        }
-        .padding(.vertical, 1)
-    }
-
-    private var regularBody: some View {
-        VStack(alignment: .leading, spacing: style == .spacious ? 3 : 2) {
+        VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 4) {
                 Image(systemName: WeatherFormatter.metricSymbol(for: metric))
                     .font(.caption2)
@@ -337,13 +327,12 @@ private struct MetricCell: View {
             }
 
             Text(displayText)
-                .font(style == .spacious ? .body.weight(.semibold) : .caption.weight(.semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(primaryTextColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
-                .contentTransition(.numericText())
         }
-        .padding(.vertical, style == .spacious ? 2 : 1)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var displayText: String {

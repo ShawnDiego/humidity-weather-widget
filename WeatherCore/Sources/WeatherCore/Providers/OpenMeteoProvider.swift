@@ -78,7 +78,7 @@ public struct OpenMeteoProvider: WeatherProvider {
             conditionCode: current.weatherCode.map { String($0) } ?? "unknown",
             sunrise: sunrise,
             sunset: sunset,
-            source: "Open-Meteo"
+            source: "开放气象"
         )
     }
 }

@@ -6,7 +6,7 @@ struct ProfileEntity: AppEntity, Identifiable {
     let id: String
     let name: String
 
-    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "显示方案 / Display Profile")
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "显示方案")
     static let defaultQuery = ProfileEntityQuery()
 
     var displayRepresentation: DisplayRepresentation {
@@ -41,25 +41,25 @@ enum LocationModeIntent: String, AppEnum {
     case current
     case manualCity
 
-    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "位置模式 / Location Mode")
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "位置模式")
 
     static let caseDisplayRepresentations: [Self: DisplayRepresentation] = [
-        .current: DisplayRepresentation(title: "当前位置 / Current Location"),
-        .manualCity: DisplayRepresentation(title: "手动城市 / Manual City")
+        .current: DisplayRepresentation(title: "当前位置"),
+        .manualCity: DisplayRepresentation(title: "手动城市")
     ]
 }
 
 struct WeatherWidgetConfigurationIntent: WidgetConfigurationIntent {
-    static let title: LocalizedStringResource = "天气组件配置 / Weather Widget Configuration"
-    static let description = IntentDescription("配置显示方案与位置模式 / Configure profile and location mode")
+    static let title: LocalizedStringResource = "天气组件配置"
+    static let description = IntentDescription("配置显示方案与位置模式")
 
-    @Parameter(title: "显示方案 / Display Profile")
+    @Parameter(title: "显示方案")
     var profile: ProfileEntity?
 
-    @Parameter(title: "位置模式 / Location Mode", default: .current)
+    @Parameter(title: "位置模式", default: .current)
     var locationMode: LocationModeIntent
 
-    @Parameter(title: "手动城市 / Manual City")
+    @Parameter(title: "手动城市")
     var manualCity: String?
 
     static var parameterSummary: some ParameterSummary {

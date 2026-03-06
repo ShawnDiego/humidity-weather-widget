@@ -3,11 +3,17 @@ import Foundation
 public enum WeatherConditionCategory: Sendable {
     case clear
     case partlyCloudy
-    case cloudy
+    case mostlyCloudy
+    case overcast
     case fog
     case haze
+    case sandDust
+    case drizzle
     case rain
+    case downpour
+    case sleet
     case snow
+    case blizzard
     case thunderstorm
     case windy
     case unknown
@@ -26,80 +32,44 @@ public enum WeatherFormatter {
     }
 
     public static func localized(_ zh: String, _ en: String, locale: Locale = .current) -> String {
-        prefersChinese(locale) ? zh : en
+        zh
     }
 
     public static func prefersChineseSystem(_ locale: Locale = .current) -> Bool {
-        if prefersChinese(locale) {
-            return true
-        }
-
-        if Locale.preferredLanguages.contains(where: { $0.lowercased().hasPrefix("zh") }) {
-            return true
-        }
-
-        if Bundle.main.preferredLocalizations.contains(where: { $0.lowercased().hasPrefix("zh") }) {
-            return true
-        }
-
-        return false
+        true
     }
 
-    public static func effectiveUnitSystem(_ unitSystem: UnitSystem, locale: Locale = .current) -> UnitSystem {
+    public static func effectiveUnitSystem(_ unitSystem: UnitSystem, locale: Locale = .autoupdatingCurrent) -> UnitSystem {
         if unitSystem != .auto { return unitSystem }
-        if locale.region?.identifier == "US" {
-            return .imperial
-        }
-        return .metric
+        let measurementLocale = locale.region == nil ? Locale.autoupdatingCurrent : locale
+        return measurementLocale.measurementSystem == .us ? .imperial : .metric
     }
 
     public static func localizedMetricName(_ metric: WeatherMetric, locale: Locale = .current) -> String {
-        if prefersChinese(locale) {
-            switch metric {
-            case .temperature: return "温度"
-            case .humidity: return "湿度"
-            case .condition: return "天气"
-            case .solarIrradiance: return "太阳光照"
-            case .daylightDuration: return "日照时长"
-            case .windSpeed: return "风速"
-            case .windDirection: return "风向"
-            case .feelsLike: return "体感温度"
-            case .pressure: return "气压"
-            case .visibility: return "能见度"
-            case .uvIndex: return "UV 指数"
-            case .precipitationProbability: return "降水概率"
-            }
-        }
-
         switch metric {
-        case .temperature: return "Temperature"
-        case .humidity: return "Humidity"
-        case .condition: return "Condition"
-        case .solarIrradiance: return "Solar Irradiance"
-        case .daylightDuration: return "Daylight"
-        case .windSpeed: return "Wind Speed"
-        case .windDirection: return "Wind Direction"
-        case .feelsLike: return "Feels Like"
-        case .pressure: return "Pressure"
-        case .visibility: return "Visibility"
-        case .uvIndex: return "UV Index"
-        case .precipitationProbability: return "Precip. Chance"
+        case .temperature: return "温度"
+        case .humidity: return "湿度"
+        case .condition: return "天气"
+        case .solarIrradiance: return "太阳光照"
+        case .daylightDuration: return "日照时长"
+        case .windSpeed: return "风速"
+        case .windDirection: return "风向"
+        case .feelsLike: return "体感温度"
+        case .pressure: return "气压"
+        case .visibility: return "能见度"
+        case .uvIndex: return "紫外线指数"
+        case .precipitationProbability: return "降水概率"
         }
     }
 
     public static func localizedUnitSystemName(_ unitSystem: UnitSystem, locale: Locale = .current) -> String {
-        if prefersChinese(locale) {
-            switch unitSystem {
-            case .auto: return "自动（按地区）"
-            case .metric: return "公制（°C, km/h）"
-            case .imperial: return "英制（°F, mph）"
-            }
-        }
+        let resolvedAuto = effectiveUnitSystem(.auto, locale: locale)
 
         switch unitSystem {
-        case .auto: return "Automatic (Region)"
-        case .metric: return "Metric (°C, km/h)"
-        case .imperial: return "Imperial (°F, mph)"
+        case .auto:
+            return resolvedAuto == .imperial ? "自动（按地区：英制）" : "自动（按地区：公制）"
+        case .metric: return "公制（°C, km/h）"
+        case .imperial: return "英制（°F, mph）"
         }
     }
 
@@ -158,12 +128,7 @@ public enum WeatherFormatter {
 
     public static func windDirectionText(degrees: Double, locale: Locale = .current) -> String {
         let normalized = ((degrees.truncatingRemainder(dividingBy: 360)) + 360).truncatingRemainder(dividingBy: 360)
-        let directions: [String]
-        if prefersChinese(locale) {
-            directions = ["北", "东北", "东", "东南", "南", "西南", "西", "西北", "北"]
-        } else {
-            directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW", "N"]
-        }
+        let directions = ["北", "东北", "东", "东南", "南", "西南", "西", "西北", "北"]
         let index = Int((normalized + 22.5) / 45.0)
         let direction = directions[max(0, min(index, directions.count - 1))]
         return "\(direction) \(format(normalized, fractionDigits: 0, locale: locale))°"
@@ -175,16 +140,28 @@ public enum WeatherFormatter {
             return isNight ? "moon.stars.fill" : "sun.max.fill"
         case .partlyCloudy:
             return isNight ? "cloud.moon.fill" : "cloud.sun.fill"
-        case .cloudy:
+        case .mostlyCloudy:
+            return isNight ? "cloud.moon.fill" : "cloud.sun.fill"
+        case .overcast:
             return "cloud.fill"
         case .fog:
             return "cloud.fog.fill"
         case .haze:
             return isNight ? "moon.haze.fill" : "sun.haze.fill"
+        case .sandDust:
+            return "sun.dust.fill"
+        case .drizzle:
+            return "cloud.drizzle.fill"
         case .rain:
             return "cloud.rain.fill"
+        case .downpour:
+            return "cloud.heavyrain.fill"
+        case .sleet:
+            return "cloud.sleet.fill"
         case .snow:
             return "cloud.snow.fill"
+        case .blizzard:
+            return "wind.snow"
         case .thunderstorm:
             return "cloud.bolt.rain.fill"
         case .windy:
@@ -195,28 +172,39 @@ public enum WeatherFormatter {
     }
 
     public static func conditionDescription(for conditionCode: String, locale: Locale = .current) -> String {
-        let chinese = prefersChinese(locale)
         switch weatherCategory(for: conditionCode) {
         case .clear:
-            return chinese ? "晴朗" : "Clear"
+            return "晴朗"
         case .partlyCloudy:
-            return chinese ? "局部多云" : "Partly Cloudy"
-        case .cloudy:
-            return chinese ? "多云" : "Cloudy"
+            return "局部多云"
+        case .mostlyCloudy:
+            return "大部多云"
+        case .overcast:
+            return "阴天"
         case .fog:
-            return chinese ? "有雾" : "Foggy"
+            return "有雾"
         case .haze:
-            return chinese ? "霾" : "Hazy"
+            return "霾"
+        case .sandDust:
+            return "浮尘"
+        case .drizzle:
+            return "毛毛雨"
         case .rain:
-            return chinese ? "降雨" : "Rain"
+            return "降雨"
+        case .downpour:
+            return "强降雨"
+        case .sleet:
+            return "雨夹雪"
         case .snow:
-            return chinese ? "降雪" : "Snow"
+            return "降雪"
+        case .blizzard:
+            return "暴风雪"
         case .thunderstorm:
-            return chinese ? "雷暴" : "Thunderstorm"
+            return "雷暴"
         case .windy:
-            return chinese ? "大风" : "Windy"
+            return "大风"
         case .unknown:
-            return chinese ? "未知" : "Unknown"
+            return "未知"
         }
     }
 
@@ -232,42 +220,39 @@ public enum WeatherFormatter {
             return wmoCategory(for: code)
         }
 
-        switch code {
-        case 1000 ... 1003:
-            return .clear
-        case 1004 ... 1006:
-            return .partlyCloudy
-        case 1007 ... 1030:
-            return .cloudy
-        case 1063 ... 1201:
-            return .rain
-        case 1204 ... 1237:
-            return .snow
-        case 1273 ... 1282:
-            return .thunderstorm
-        default:
-            return .unknown
-        }
+        return weatherApiFallbackCategory(for: code)
     }
 
     private static func qWeatherCategory(for code: Int) -> WeatherConditionCategory {
         switch code {
         case 100, 150:
             return .clear
-        case 101, 102, 103, 151, 152, 153:
+        case 101, 151:
             return .partlyCloudy
+        case 102, 103, 152, 153:
+            return .mostlyCloudy
         case 104, 154:
-            return .cloudy
-        case 302 ... 304:
-            return .thunderstorm
-        case 300 ... 399:
-            return .rain
-        case 400 ... 499:
-            return .snow
+            return .overcast
         case 500, 501, 509, 510, 514, 515:
             return .fog
-        case 502 ... 508, 511 ... 513:
+        case 502, 511, 512, 513:
             return .haze
+        case 503, 504, 507, 508:
+            return .sandDust
+        case 300, 305, 309:
+            return .drizzle
+        case 301, 306, 313:
+            return .rain
+        case 307, 308, 310, 311, 312, 314, 315, 316, 317, 318:
+            return .downpour
+        case 302, 303, 304:
+            return .thunderstorm
+        case 404, 405:
+            return .sleet
+        case 402, 403, 410:
+            return .blizzard
+        case 400, 401, 406, 407, 408, 409:
+            return .snow
         case 800 ... 899:
             return .windy
         default:
@@ -279,18 +264,59 @@ public enum WeatherFormatter {
         switch code {
         case 0:
             return .clear
-        case 1, 2:
+        case 1:
             return .partlyCloudy
+        case 2:
+            return .mostlyCloudy
         case 3:
-            return .cloudy
+            return .overcast
         case 45, 48:
             return .fog
-        case 51 ... 67, 80 ... 82:
+        case 51, 53, 55:
+            return .drizzle
+        case 56, 57, 66, 67:
+            return .sleet
+        case 61, 63, 80, 81:
             return .rain
-        case 71 ... 77, 85, 86:
+        case 65, 82:
+            return .downpour
+        case 71, 73, 77, 85:
             return .snow
+        case 75, 86:
+            return .blizzard
         case 95 ... 99:
             return .thunderstorm
+        default:
+            return .unknown
+        }
+    }
+
+    private static func weatherApiFallbackCategory(for code: Int) -> WeatherConditionCategory {
+        switch code {
+        case 1000:
+            return .clear
+        case 1003:
+            return .partlyCloudy
+        case 1006:
+            return .mostlyCloudy
+        case 1009:
+            return .overcast
+        case 1030, 1135, 1147:
+            return .fog
+        case 1063, 1150, 1153:
+            return .drizzle
+        case 1087, 1273, 1276:
+            return .thunderstorm
+        case 1066, 1210, 1213, 1216, 1219, 1222, 1255:
+            return .snow
+        case 1114, 1117, 1225, 1258, 1279, 1282:
+            return .blizzard
+        case 1069, 1072, 1168, 1171, 1198, 1201, 1204, 1207, 1237, 1249, 1252, 1261, 1264:
+            return .sleet
+        case 1180, 1183, 1186, 1189, 1240:
+            return .rain
+        case 1192, 1195, 1243, 1246:
+            return .downpour
         default:
             return .unknown
         }

@@ -42,7 +42,7 @@ public struct CompositeWeatherProvider: WeatherProvider {
             let originalCount = merged.values.count
             merged.mergeMissingValues(from: secondarySnapshot)
             if merged.values.count > originalCount {
-                merged.source = "\(primarySnapshot.source)+\(secondarySnapshot.source)"
+                merged.source = "\(primarySnapshot.source) + \(secondarySnapshot.source)"
             }
             return merged
         case let (.success(primarySnapshot), .failure):

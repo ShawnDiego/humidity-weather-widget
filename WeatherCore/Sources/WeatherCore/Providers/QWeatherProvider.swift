@@ -47,7 +47,7 @@ public struct QWeatherProvider: WeatherProvider {
             conditionCode: now.icon,
             sunrise: sunrise,
             sunset: sunset,
-            source: "QWeather"
+            source: "和风天气"
         )
     }
 
@@ -65,7 +65,7 @@ public struct QWeatherProvider: WeatherProvider {
         let decoded = try JSONDecoder().decode(QWeatherNowResponse.self, from: data)
         guard decoded.code == "200", let now = decoded.now else {
             throw WeatherError.apiError(
-                source: "QWeather",
+                source: "和风天气",
                 code: decoded.code,
                 message: WeatherFormatter.localized("天气接口返回失败", "Current weather request failed")
             )
@@ -89,7 +89,7 @@ public struct QWeatherProvider: WeatherProvider {
         let decoded = try JSONDecoder().decode(QWeatherSunResponse.self, from: data)
         guard decoded.code == "200" else {
             throw WeatherError.apiError(
-                source: "QWeather",
+                source: "和风天气",
                 code: decoded.code,
                 message: WeatherFormatter.localized("日出日落接口返回失败", "Sunrise/Sunset request failed")
             )

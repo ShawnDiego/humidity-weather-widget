@@ -87,9 +87,67 @@ struct WeatherCoreTests {
         )
 
         #expect(imperialTemp.contains("°F"))
-        #expect(WeatherFormatter.localizedMetricName(.humidity, locale: us) == "Humidity")
+        #expect(WeatherFormatter.localizedMetricName(.humidity, locale: us) == "湿度")
         #expect(WeatherFormatter.localizedMetricName(.humidity, locale: zh) == "湿度")
-        #expect(WeatherFormatter.localizedUnitSystemName(.metric, locale: us).contains("Metric"))
+        #expect(WeatherFormatter.localizedUnitSystemName(.metric, locale: us).contains("公制"))
+        #expect(WeatherFormatter.effectiveUnitSystem(.auto, locale: us) == .imperial)
+        #expect(WeatherFormatter.effectiveUnitSystem(.auto, locale: zh) == .metric)
+    }
+
+    @Test
+    func formatterSupportsHighGranularityWeatherMappings() {
+        let qWeatherSamples: [(String, WeatherConditionCategory)] = [
+            ("100", .clear),
+            ("101", .partlyCloudy),
+            ("102", .mostlyCloudy),
+            ("104", .overcast),
+            ("309", .drizzle),
+            ("301", .rain),
+            ("312", .downpour),
+            ("404", .sleet),
+            ("403", .blizzard),
+            ("502", .haze),
+            ("503", .sandDust),
+            ("302", .thunderstorm),
+            ("800", .windy)
+        ]
+
+        for (code, expected) in qWeatherSamples {
+            #expect(WeatherFormatter.weatherCategory(for: code) == expected)
+        }
+
+        let wmoSamples: [(String, WeatherConditionCategory)] = [
+            ("0", .clear),
+            ("1", .partlyCloudy),
+            ("2", .mostlyCloudy),
+            ("3", .overcast),
+            ("45", .fog),
+            ("53", .drizzle),
+            ("56", .sleet),
+            ("63", .rain),
+            ("65", .downpour),
+            ("73", .snow),
+            ("75", .blizzard),
+            ("95", .thunderstorm)
+        ]
+
+        for (code, expected) in wmoSamples {
+            #expect(WeatherFormatter.weatherCategory(for: code) == expected)
+        }
+
+        let fallbackSamples: [(String, WeatherConditionCategory)] = [
+            ("1006", .mostlyCloudy),
+            ("1009", .overcast),
+            ("1150", .drizzle),
+            ("1195", .downpour),
+            ("1204", .sleet),
+            ("1225", .blizzard),
+            ("1276", .thunderstorm)
+        ]
+
+        for (code, expected) in fallbackSamples {
+            #expect(WeatherFormatter.weatherCategory(for: code) == expected)
+        }
     }
 
     @Test
@@ -97,10 +155,36 @@ struct WeatherCoreTests {
         let en = Locale(identifier: "en_US")
         let zh = Locale(identifier: "zh_Hans_CN")
 
-        #expect(WeatherFormatter.conditionDescription(for: "95", locale: en) == "Thunderstorm")
-        #expect(WeatherFormatter.conditionDescription(for: "302", locale: zh) == "雷暴")
+        let localizedSamples: [(String, WeatherConditionCategory)] = [
+            ("100", .clear),
+            ("101", .partlyCloudy),
+            ("102", .mostlyCloudy),
+            ("104", .overcast),
+            ("500", .fog),
+            ("502", .haze),
+            ("503", .sandDust),
+            ("309", .drizzle),
+            ("301", .rain),
+            ("1195", .downpour),
+            ("404", .sleet),
+            ("1213", .snow),
+            ("403", .blizzard),
+            ("302", .thunderstorm),
+            ("800", .windy)
+        ]
+
+        for (code, expectedCategory) in localizedSamples {
+            #expect(WeatherFormatter.weatherCategory(for: code) == expectedCategory)
+            #expect(WeatherFormatter.conditionDescription(for: code, locale: en) != "Unknown")
+            #expect(WeatherFormatter.conditionDescription(for: code, locale: zh) != "未知")
+        }
+
+        #expect(WeatherFormatter.conditionDescription(for: "102", locale: en) == "大部多云")
+        #expect(WeatherFormatter.conditionDescription(for: "404", locale: zh) == "雨夹雪")
         #expect(WeatherFormatter.weatherSymbol(for: "0", isNight: false) == "sun.max.fill")
         #expect(WeatherFormatter.weatherSymbol(for: "0", isNight: true) == "moon.stars.fill")
+        #expect(WeatherFormatter.weatherSymbol(for: "404", isNight: false) == "cloud.sleet.fill")
+        #expect(WeatherFormatter.weatherSymbol(for: "75", isNight: false) == "wind.snow")
     }
 }
 

@@ -78,7 +78,7 @@ extension LocationPermissionManager: @preconcurrency CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        errorMessage = "\(loc("定位失败", "Location failed")): \(error.localizedDescription)"
+        errorMessage = localizedLocationErrorMessage(error)
     }
 
     private func isAuthorized(_ status: CLAuthorizationStatus) -> Bool {
@@ -91,5 +91,24 @@ extension LocationPermissionManager: @preconcurrency CLLocationManagerDelegate {
 
     private func loc(_ zh: String, _ en: String) -> String {
         WeatherFormatter.prefersChineseSystem() ? zh : en
+    }
+
+    private func localizedLocationErrorMessage(_ error: Error) -> String {
+        guard let error = error as? CLError else {
+            return loc("定位失败，请稍后重试。", "Location failed. Please try again.")
+        }
+
+        switch error.code {
+        case .denied:
+            return loc("定位权限未开启，请在系统设置中允许定位。", "Location permission is disabled. Please enable it in system settings.")
+        case .locationUnknown:
+            return loc("暂时无法确定当前位置，请稍后重试。", "Current location is temporarily unavailable. Please try again.")
+        case .network:
+            return loc("定位网络请求失败，请检查网络后重试。", "Location network request failed. Check your connection and try again.")
+        case .headingFailure:
+            return loc("设备暂时无法提供定位方向信息。", "The device cannot provide heading information right now.")
+        default:
+            return loc("定位失败，请稍后重试。", "Location failed. Please try again.")
+        }
     }
 }

@@ -12,7 +12,7 @@ struct ProfileListView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppGradientBackground()
+                AppGradientBackground(category: model.currentWeatherCategory, isNight: model.currentWeatherIsNight)
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
@@ -191,11 +191,12 @@ private struct ProfileCard: View {
     }
 
     private var uiLocale: Locale {
-        Locale(identifier: Locale.preferredLanguages.first ?? locale.identifier)
+        locale
     }
 }
 
 private struct ProfileEditorView: View {
+    @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
 
@@ -206,6 +207,9 @@ private struct ProfileEditorView: View {
     @State private var unitSystem: UnitSystem
     @State private var orderedMetrics: [WeatherMetric]
     @State private var selectedMetrics: Set<WeatherMetric>
+    @State private var previewSize: WidgetPreviewSize
+    @State private var previewWeather: WidgetPreviewWeather
+    @State private var previewNight: Bool
 
     init(profile: DisplayProfile?, onSave: @escaping (DisplayProfile) -> Void) {
         self.profile = profile
@@ -216,6 +220,9 @@ private struct ProfileEditorView: View {
         _unitSystem = State(initialValue: template.unitSystem)
         _orderedMetrics = State(initialValue: Self.makeOrderedMetrics(from: template.metrics))
         _selectedMetrics = State(initialValue: Set(template.metrics))
+        _previewSize = State(initialValue: .medium)
+        _previewWeather = State(initialValue: .clear)
+        _previewNight = State(initialValue: false)
     }
 
     var body: some View {
@@ -227,6 +234,37 @@ private struct ProfileEditorView: View {
                     Text(WeatherFormatter.localizedUnitSystemName(.metric, locale: uiLocale)).tag(UnitSystem.metric)
                     Text(WeatherFormatter.localizedUnitSystemName(.imperial, locale: uiLocale)).tag(UnitSystem.imperial)
                 }
+            }
+
+            Section(loc("小组件预览（边编辑边查看）", "Widget Preview (live while editing)")) {
+                Picker(loc("尺寸", "Size"), selection: $previewSize) {
+                    ForEach(WidgetPreviewSize.allCases) { size in
+                        Text(size.label(prefersChinese: prefersChinese)).tag(size)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Picker(loc("天气场景", "Weather Scene"), selection: $previewWeather) {
+                    ForEach(WidgetPreviewWeather.allCases) { weather in
+                        Text(weather.label(prefersChinese: prefersChinese)).tag(weather)
+                    }
+                }
+
+                Toggle(loc("夜间效果", "Night Appearance"), isOn: $previewNight)
+
+                HStack {
+                    Spacer(minLength: 0)
+                    WidgetEditorPreview(
+                        profile: draftProfile,
+                        locale: uiLocale,
+                        widgetFamily: previewSize.widgetFamily,
+                        conditionCode: previewWeather.conditionCode,
+                        isNight: previewNight,
+                        locationName: previewLocationName
+                    )
+                    Spacer(minLength: 0)
+                }
+                .padding(.vertical, 4)
             }
 
             Section(loc("显示字段（点选启用，拖动排序）", "Visible Metrics (tap to toggle, drag to reorder)")) {
@@ -285,16 +323,7 @@ private struct ProfileEditorView: View {
     }
 
     private func save() {
-        let selectedOrdered = orderedMetrics.filter { selectedMetrics.contains($0) }
-        let finalMetrics = selectedOrdered.isEmpty ? [.temperature] : selectedOrdered
-
-        let profile = DisplayProfile(
-            id: profile?.id ?? UUID(),
-            name: name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? defaultProfileName : name,
-            metrics: finalMetrics,
-            unitSystem: unitSystem
-        )
-        onSave(profile)
+        onSave(draftProfile)
         dismiss()
     }
 
@@ -302,11 +331,30 @@ private struct ProfileEditorView: View {
         loc("未命名方案", "Untitled Profile")
     }
 
+    private var draftProfile: DisplayProfile {
+        let selectedOrdered = orderedMetrics.filter { selectedMetrics.contains($0) }
+        let finalMetrics = selectedOrdered.isEmpty ? [.temperature] : selectedOrdered
+        return DisplayProfile(
+            id: profile?.id ?? UUID(),
+            name: name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? defaultProfileName : name,
+            metrics: finalMetrics,
+            unitSystem: unitSystem
+        )
+    }
+
+    private var previewLocationName: String {
+        model.storedLocation?.name ?? loc("北京", "Beijing")
+    }
+
+    private var prefersChinese: Bool {
+        WeatherFormatter.prefersChineseSystem(locale)
+    }
+
     private func loc(_ zh: String, _ en: String) -> String {
         WeatherFormatter.prefersChineseSystem(locale) ? zh : en
     }
 
     private var uiLocale: Locale {
-        Locale(identifier: Locale.preferredLanguages.first ?? locale.identifier)
+        locale
     }
 }

@@ -11,7 +11,7 @@ struct AppSettingsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppGradientBackground()
+                AppGradientBackground(category: model.currentWeatherCategory, isNight: model.currentWeatherIsNight)
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {

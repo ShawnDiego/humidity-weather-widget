@@ -1,4 +1,5 @@
 import SwiftUI
+import WeatherCore
 
 enum AppPalette {
     static let accent = Color(red: 0.31, green: 0.84, blue: 0.96)
@@ -9,31 +10,41 @@ enum AppPalette {
 }
 
 struct AppGradientBackground: View {
+    var category: WeatherConditionCategory? = nil
+    var isNight: Bool = false
+
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.08, green: 0.12, blue: 0.20),
-                    Color(red: 0.06, green: 0.10, blue: 0.16),
-                    Color(red: 0.04, green: 0.07, blue: 0.12)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            if let category {
+                WeatherWidgetBackground(category: category, isNight: isNight)
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.08, green: 0.12, blue: 0.20),
+                        Color(red: 0.06, green: 0.10, blue: 0.16),
+                        Color(red: 0.04, green: 0.07, blue: 0.12)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
 
             Circle()
-                .fill(AppPalette.accent.opacity(0.18))
+                .fill(AppPalette.accent.opacity(category == nil ? 0.18 : 0.10))
                 .frame(width: 300, height: 300)
                 .blur(radius: 40)
                 .offset(x: 210, y: -260)
 
             Circle()
-                .fill(Color.cyan.opacity(0.10))
+                .fill(Color.cyan.opacity(category == nil ? 0.10 : 0.07))
                 .frame(width: 260, height: 260)
                 .blur(radius: 48)
                 .offset(x: -220, y: 280)
+
+            Rectangle()
+                .fill(Color.black.opacity(category == nil ? 0.0 : 0.08))
         }
+        .ignoresSafeArea()
     }
 }
 
