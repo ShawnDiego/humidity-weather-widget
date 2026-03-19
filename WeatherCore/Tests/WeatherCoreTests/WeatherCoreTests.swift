@@ -75,6 +75,76 @@ struct WeatherCoreTests {
     }
 
     @Test
+    func snapshotMergeMergesHourlySeriesFromFallback() {
+        let now = Date()
+        var primary = WeatherSnapshot(
+            timestamp: now,
+            timezone: "Asia/Shanghai",
+            locationName: "北京",
+            values: [.temperature: 25],
+            conditionCode: "100",
+            sunrise: nil,
+            sunset: nil,
+            source: "Primary",
+            hourly: [
+                HourlyWeatherPoint(
+                    timestamp: now,
+                    values: [.temperature: 25]
+                )
+            ]
+        )
+
+        let fallback = WeatherSnapshot(
+            timestamp: now,
+            timezone: "Asia/Shanghai",
+            locationName: "北京",
+            values: [.humidity: 60],
+            conditionCode: "101",
+            sunrise: nil,
+            sunset: nil,
+            source: "Fallback",
+            hourly: [
+                HourlyWeatherPoint(
+                    timestamp: now,
+                    values: [.humidity: 60]
+                ),
+                HourlyWeatherPoint(
+                    timestamp: now.addingTimeInterval(3600),
+                    values: [.temperature: 24]
+                )
+            ]
+        )
+
+        primary.mergeMissingValues(from: fallback)
+
+        #expect(primary.values[.humidity] == 60)
+        #expect(primary.hourly.count == 2)
+        #expect(primary.hourly.first?.values[.temperature] == 25)
+        #expect(primary.hourly.first?.values[.humidity] == 60)
+    }
+
+    @Test
+    func weatherSnapshotDecodesLegacyPayloadWithoutHourlySeries() throws {
+        let payload = """
+        {
+          "timestamp": "2026-03-19T08:00:00Z",
+          "timezone": "Asia/Shanghai",
+          "locationName": "北京",
+          "values": ["temperature", 22.5],
+          "conditionCode": "100",
+          "source": "Legacy"
+        }
+        """.data(using: .utf8)!
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let snapshot = try decoder.decode(WeatherSnapshot.self, from: payload)
+
+        #expect(snapshot.hourly.isEmpty)
+        #expect(snapshot.values[.temperature] == 22.5)
+    }
+
+    @Test
     func formatterSupportsUnitAndLanguageLocalization() {
         let us = Locale(identifier: "en_US")
         let zh = Locale(identifier: "zh_Hans_CN")

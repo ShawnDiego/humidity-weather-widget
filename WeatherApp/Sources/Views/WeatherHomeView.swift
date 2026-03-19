@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 import WeatherCore
 
 struct WeatherHomeView: View {
@@ -6,6 +7,7 @@ struct WeatherHomeView: View {
     @Environment(\.locale) private var locale
 
     let onSelectTab: (AppTab) -> Void
+    @State private var selectedMetric: DashboardMetric?
 
     var body: some View {
         NavigationStack {
@@ -59,6 +61,26 @@ struct WeatherHomeView: View {
                     refreshButton
                 }
 #endif
+            }
+            .sheet(item: $selectedMetric) { metric in
+                if let snapshot = model.currentSnapshot?.snapshot {
+                    HourlyMetricChartSheet(
+                        metric: metric,
+                        snapshot: snapshot,
+                        unitSystem: .auto,
+                        locale: locale
+                    )
+                } else {
+                    VStack(spacing: 12) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.system(size: 36, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.secondary)
+                        Text(loc("暂无可用图表数据", "Chart data is unavailable right now"))
+                            .font(.system(.headline, design: .rounded, weight: .bold))
+                    }
+                    .padding(24)
+                    .presentationDetents([.medium])
+                }
             }
         }
     }
@@ -144,7 +166,10 @@ struct WeatherHomeView: View {
                 title: loc("关键指标", "Key Metrics"),
                 subtitle: loc("实时关注湿度、体感、风与空气条件", "Track humidity, feels-like, wind, and air conditions at a glance"),
                 metrics: dashboardMetrics(snapshot),
-                locale: locale
+                locale: locale,
+                onSelectMetric: { metric in
+                    selectedMetric = metric
+                }
             )
         }
 
@@ -510,6 +535,7 @@ private struct WeatherMetricGridCard: View {
     let subtitle: String
     let metrics: [DashboardMetric]
     let locale: Locale
+    let onSelectMetric: (DashboardMetric) -> Void
 
     private let columns = [
         GridItem(.flexible(), spacing: 12),
@@ -530,7 +556,11 @@ private struct WeatherMetricGridCard: View {
 
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(metrics) { metric in
-                        WeatherMetricTile(metric: metric, locale: locale)
+                        WeatherMetricTile(
+                            metric: metric,
+                            locale: locale,
+                            action: { onSelectMetric(metric) }
+                        )
                     }
                 }
             }
@@ -541,8 +571,22 @@ private struct WeatherMetricGridCard: View {
 private struct WeatherMetricTile: View {
     let metric: DashboardMetric
     let locale: Locale
+    let action: (() -> Void)?
 
     var body: some View {
+        Group {
+            if let action {
+                Button(action: action) {
+                    tileBody
+                }
+                .buttonStyle(.plain)
+            } else {
+                tileBody
+            }
+        }
+    }
+
+    private var tileBody: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: WeatherFormatter.metricSymbol(for: metric.metric))
@@ -552,6 +596,14 @@ private struct WeatherMetricTile: View {
                     .font(.system(.caption, design: .rounded, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.70))
                     .lineLimit(1)
+
+                Spacer(minLength: 0)
+
+                if action != nil {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(.caption, design: .rounded, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.58))
+                }
             }
 
             Text(metric.valueText)
@@ -570,6 +622,202 @@ private struct WeatherMetricTile: View {
                 .stroke(Color.white.opacity(0.12), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+private struct HourlyMetricChartSheet: View {
+    let metric: DashboardMetric
+    let snapshot: WeatherSnapshot
+    let unitSystem: UnitSystem
+    let locale: Locale
+
+    private var samples: [HourlyChartSample] {
+        snapshot.hourly
+            .sorted { $0.timestamp < $1.timestamp }
+            .compactMap { point in
+                guard let rawValue = point.values[metric.metric] else { return nil }
+                return HourlyChartSample(
+                    timestamp: point.timestamp,
+                    value: convertedChartValue(rawValue, metric: metric.metric)
+                )
+            }
+            .prefix(24)
+            .map { $0 }
+    }
+
+    private var resolvedUnitSystem: UnitSystem {
+        WeatherFormatter.effectiveUnitSystem(unitSystem, locale: locale)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                WeatherSceneBackground(
+                    category: WeatherFormatter.weatherCategory(for: snapshot.conditionCode),
+                    isNight: isNight
+                )
+
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 14) {
+                        AppCard {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(WeatherFormatter.localizedMetricName(metric.metric, locale: locale))
+                                    .font(.system(.title3, design: .rounded, weight: .bold))
+                                    .foregroundStyle(.white)
+
+                                Text(loc("未来 24 小时趋势", "Hourly trend for the next 24 hours"))
+                                    .font(.system(.subheadline, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.72))
+
+                                Text(metric.valueText)
+                                    .font(.system(.title, design: .rounded, weight: .bold))
+                                    .foregroundStyle(.white)
+                            }
+                        }
+
+                        if samples.isEmpty {
+                            AppCard {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(loc("暂无小时级数据", "No hourly data available"))
+                                        .font(.system(.headline, design: .rounded, weight: .bold))
+                                        .foregroundStyle(.white)
+                                    Text(loc(
+                                        "当前数据源还没有返回这个指标的逐小时预报，请稍后重试。",
+                                        "The active weather source did not return hourly forecast data for this metric yet."
+                                    ))
+                                    .font(.system(.subheadline, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.72))
+                                }
+                            }
+                        } else {
+                            AppCard {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Chart(samples) { sample in
+                                        AreaMark(
+                                            x: .value("Time", sample.timestamp),
+                                            y: .value("Value", sample.value)
+                                        )
+                                        .foregroundStyle(
+                                            LinearGradient(
+                                                colors: [
+                                                    AppPalette.accent.opacity(0.45),
+                                                    AppPalette.accent.opacity(0.08)
+                                                ],
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            )
+                                        )
+
+                                        LineMark(
+                                            x: .value("Time", sample.timestamp),
+                                            y: .value("Value", sample.value)
+                                        )
+                                        .lineStyle(StrokeStyle(lineWidth: 2.6, lineCap: .round, lineJoin: .round))
+                                        .interpolationMethod(.catmullRom)
+                                        .foregroundStyle(AppPalette.accent)
+                                    }
+                                    .frame(height: 240)
+                                    .chartXAxis {
+                                        AxisMarks(values: .stride(by: .hour, count: 3)) { _ in
+                                            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.6))
+                                                .foregroundStyle(.white.opacity(0.18))
+                                            AxisTick()
+                                                .foregroundStyle(.white.opacity(0.38))
+                                            AxisValueLabel(
+                                                format: .dateTime.hour(.twoDigits(amPM: .omitted)),
+                                                centered: true
+                                            )
+                                            .foregroundStyle(.white.opacity(0.74))
+                                        }
+                                    }
+                                    .chartYAxis {
+                                        AxisMarks(position: .leading) { _ in
+                                            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.6))
+                                                .foregroundStyle(.white.opacity(0.15))
+                                            AxisTick()
+                                                .foregroundStyle(.white.opacity(0.32))
+                                            AxisValueLabel()
+                                                .foregroundStyle(.white.opacity(0.74))
+                                        }
+                                    }
+                                    .chartPlotStyle { plot in
+                                        plot
+                                            .background(Color.white.opacity(0.03))
+                                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    }
+
+                                    if !unitLabel.isEmpty {
+                                        Text("\(loc("单位", "Unit")): \(unitLabel)")
+                                            .font(.system(.footnote, design: .rounded, weight: .medium))
+                                            .foregroundStyle(.white.opacity(0.68))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 18)
+                    .frame(maxWidth: 960)
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .navigationTitle(WeatherFormatter.localizedMetricName(metric.metric, locale: locale))
+#if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+#endif
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private var isNight: Bool {
+        if let sunrise = snapshot.sunrise, let sunset = snapshot.sunset {
+            return snapshot.timestamp < sunrise || snapshot.timestamp >= sunset
+        }
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: snapshot.timezone) ?? .current
+        let hour = calendar.component(.hour, from: snapshot.timestamp)
+        return hour < 6 || hour >= 18
+    }
+
+    private var unitLabel: String {
+        switch metric.metric {
+        case .temperature, .feelsLike:
+            return resolvedUnitSystem == .imperial ? "°F" : "°C"
+        case .humidity, .precipitationProbability:
+            return "%"
+        case .windSpeed:
+            return resolvedUnitSystem == .imperial ? "mph" : "km/h"
+        case .windDirection:
+            return "°"
+        case .pressure:
+            return resolvedUnitSystem == .imperial ? "inHg" : "hPa"
+        case .visibility:
+            return resolvedUnitSystem == .imperial ? "mi" : "km"
+        case .uvIndex:
+            return loc("指数", "Index")
+        default:
+            return ""
+        }
+    }
+
+    private func convertedChartValue(_ value: Double, metric: WeatherMetric) -> Double {
+        switch metric {
+        case .temperature, .feelsLike:
+            return resolvedUnitSystem == .imperial ? value * 9 / 5 + 32 : value
+        case .windSpeed:
+            return resolvedUnitSystem == .imperial ? value * 0.621371 : value
+        case .pressure:
+            return resolvedUnitSystem == .imperial ? value * 0.029529983071445 : value
+        case .visibility:
+            return resolvedUnitSystem == .imperial ? value * 0.621371 : value
+        default:
+            return value
+        }
+    }
+
+    private func loc(_ zh: String, _ en: String) -> String {
+        WeatherFormatter.prefersChineseSystem(locale) ? zh : en
     }
 }
 
@@ -810,6 +1058,13 @@ private struct DashboardMetric: Identifiable {
     let valueText: String
 
     var id: WeatherMetric { metric }
+}
+
+private struct HourlyChartSample: Identifiable {
+    let timestamp: Date
+    let value: Double
+
+    var id: Date { timestamp }
 }
 
 private struct SunlightRow: Identifiable {

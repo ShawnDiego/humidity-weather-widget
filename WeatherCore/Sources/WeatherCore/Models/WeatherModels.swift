@@ -98,6 +98,7 @@ public struct WeatherSnapshot: Codable, Hashable, Sendable {
     public var sunrise: Date?
     public var sunset: Date?
     public var source: String
+    public var hourly: [HourlyWeatherPoint]
 
     public init(
         timestamp: Date,
@@ -107,7 +108,8 @@ public struct WeatherSnapshot: Codable, Hashable, Sendable {
         conditionCode: String,
         sunrise: Date?,
         sunset: Date?,
-        source: String
+        source: String,
+        hourly: [HourlyWeatherPoint] = []
     ) {
         self.timestamp = timestamp
         self.timezone = timezone
@@ -117,6 +119,7 @@ public struct WeatherSnapshot: Codable, Hashable, Sendable {
         self.sunrise = sunrise
         self.sunset = sunset
         self.source = source
+        self.hourly = hourly
     }
 
     public mutating func mergeMissingValues(from fallback: WeatherSnapshot) {
@@ -129,6 +132,88 @@ public struct WeatherSnapshot: Codable, Hashable, Sendable {
         }
         if sunset == nil {
             sunset = fallback.sunset
+        }
+
+        mergeHourlySeries(from: fallback.hourly)
+    }
+
+    private mutating func mergeHourlySeries(from fallback: [HourlyWeatherPoint]) {
+        guard !fallback.isEmpty else { return }
+
+        if hourly.isEmpty {
+            hourly = fallback
+            return
+        }
+
+        var merged = Dictionary(uniqueKeysWithValues: hourly.map { ($0.timestamp, $0) })
+        for point in fallback {
+            if var existing = merged[point.timestamp] {
+                existing.mergeMissingValues(from: point)
+                merged[point.timestamp] = existing
+            } else {
+                merged[point.timestamp] = point
+            }
+        }
+        hourly = merged.values.sorted { $0.timestamp < $1.timestamp }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case timestamp
+        case timezone
+        case locationName
+        case values
+        case conditionCode
+        case sunrise
+        case sunset
+        case source
+        case hourly
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        timestamp = try container.decode(Date.self, forKey: .timestamp)
+        timezone = try container.decode(String.self, forKey: .timezone)
+        locationName = try container.decode(String.self, forKey: .locationName)
+        values = try container.decode([WeatherMetric: Double].self, forKey: .values)
+        conditionCode = try container.decode(String.self, forKey: .conditionCode)
+        sunrise = try container.decodeIfPresent(Date.self, forKey: .sunrise)
+        sunset = try container.decodeIfPresent(Date.self, forKey: .sunset)
+        source = try container.decode(String.self, forKey: .source)
+        hourly = try container.decodeIfPresent([HourlyWeatherPoint].self, forKey: .hourly) ?? []
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(timestamp, forKey: .timestamp)
+        try container.encode(timezone, forKey: .timezone)
+        try container.encode(locationName, forKey: .locationName)
+        try container.encode(values, forKey: .values)
+        try container.encode(conditionCode, forKey: .conditionCode)
+        try container.encodeIfPresent(sunrise, forKey: .sunrise)
+        try container.encodeIfPresent(sunset, forKey: .sunset)
+        try container.encode(source, forKey: .source)
+        try container.encode(hourly, forKey: .hourly)
+    }
+}
+
+public struct HourlyWeatherPoint: Codable, Hashable, Sendable {
+    public var timestamp: Date
+    public var values: [WeatherMetric: Double]
+    public var conditionCode: String?
+
+    public init(timestamp: Date, values: [WeatherMetric: Double], conditionCode: String? = nil) {
+        self.timestamp = timestamp
+        self.values = values
+        self.conditionCode = conditionCode
+    }
+
+    mutating func mergeMissingValues(from fallback: HourlyWeatherPoint) {
+        for (metric, value) in fallback.values where values[metric] == nil {
+            values[metric] = value
+        }
+
+        if conditionCode == nil {
+            conditionCode = fallback.conditionCode
         }
     }
 }
