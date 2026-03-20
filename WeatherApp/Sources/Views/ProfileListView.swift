@@ -130,6 +130,7 @@ struct ProfileListView: View {
 }
 
 private struct ProfileCard: View {
+    @EnvironmentObject private var model: AppModel
     @Environment(\.locale) private var locale
 
     let profile: DisplayProfile
@@ -157,15 +158,19 @@ private struct ProfileCard: View {
                     )
                 }
 
-                WrappingFlowLayout(horizontalSpacing: 10, verticalSpacing: 10) {
-                    ForEach(profile.metrics, id: \.self) { metric in
-                        MetricChip(
-                            title: WeatherFormatter.localizedMetricName(metric, locale: uiLocale),
-                            symbol: WeatherFormatter.metricSymbol(for: metric)
-                        )
+                Text(loc("小组件样式预览", "Widget Style Preview"))
+                    .font(.system(.caption, design: .rounded, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.72))
+
+                HStack {
+                    Spacer(minLength: 0)
+                    ViewThatFits(in: .horizontal) {
+                        previewWidget(size: .medium)
+                        previewWidget(size: .small)
                     }
+                    Spacer(minLength: 0)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 4)
 
                 HStack(spacing: 10) {
                     Button(loc("编辑", "Edit")) {
@@ -192,6 +197,36 @@ private struct ProfileCard: View {
 
     private var uiLocale: Locale {
         locale
+    }
+
+    @ViewBuilder
+    private func previewWidget(size: WidgetPreviewSize) -> some View {
+        WidgetEditorPreview(
+            profile: profile,
+            locale: uiLocale,
+            widgetFamily: size.widgetFamily,
+            conditionCode: previewConditionCode,
+            isNight: model.currentWeatherIsNight,
+            locationName: previewLocationName
+        )
+    }
+
+    private var previewConditionCode: String {
+        model.currentSnapshot?.snapshot.conditionCode ?? WidgetPreviewWeather.clear.conditionCode
+    }
+
+    private var previewLocationName: String {
+        if let snapshotName = model.currentSnapshot?.snapshot.locationName,
+           !snapshotName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return snapshotName
+        }
+
+        if let storedName = model.storedLocation?.name,
+           !storedName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return storedName
+        }
+
+        return loc("北京", "Beijing")
     }
 }
 
