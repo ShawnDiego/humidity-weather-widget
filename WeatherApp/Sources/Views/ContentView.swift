@@ -62,7 +62,6 @@ struct ContentView: View {
             return
         }
 
-        selectedTab = .profiles
         deepLinkProfileID = uuid
     }
 
